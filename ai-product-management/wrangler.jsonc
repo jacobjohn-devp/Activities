@@ -1,0 +1,11 @@
+// Cloudflare Workers static assets for the AI Product Management course.
+// Cloudflare runs `python3 build.py` (build command), then `npx wrangler deploy`,
+// which uploads ./dist as static assets. No Worker script is needed.
+{
+  // Must match the Worker's name in the Cloudflare dashboard.
+  "name": "activities",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "./dist"
+  }
+}

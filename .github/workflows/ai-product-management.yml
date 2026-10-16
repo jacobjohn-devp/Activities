@@ -1,7 +1,7 @@
 name: AI Product Management course
 
 # Validates and builds the course on every pull request and push to main.
-# Cloudflare Pages deploys from the same branches; this check stops a broken
+# Cloudflare deploys from the same branches; this check stops a broken
 # chapter from reaching it.
 on:
   pull_request:

@@ -28,21 +28,21 @@ A 14-chapter internal course that takes experienced product managers to AI produ
    python3 -m http.server 8000 --directory dist
    ```
 
-4. Open a pull request. CI validates and builds it, and Cloudflare Pages posts a preview link. Merging to `main` deploys to production.
+4. Open a pull request. CI validates and builds it, and Cloudflare posts a preview build. Merging to `main` deploys to production.
 
 Perishable chapters (3, 8, 11 and the EU AI Act section of 12) are marked with their shelf life and should be reviewed each quarter.
 
 ## Deployment
 
-Cloudflare Pages builds from this repository:
+Cloudflare (Workers with static assets) builds from this repository:
 
 | Setting | Value |
 | --- | --- |
 | Production branch | `main` |
 | Root directory | `ai-product-management` |
 | Build command | `python3 build.py` |
-| Build output directory | `dist` |
+| Deploy command | `npx wrangler deploy` |
 
-`build.py` also writes `dist/_headers` with basic security headers.
+`wrangler.jsonc` tells Wrangler to upload `dist/` as static assets. Its `name` must match the Worker's name in the Cloudflare dashboard. `build.py` also writes `dist/_headers` with basic security headers.
 
 Learner progress, quiz answers, lab ticks, the hangar and the theme choice are stored in each visitor's own browser (`localStorage`). Nothing is sent to a server.
