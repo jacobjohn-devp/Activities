@@ -33,13 +33,11 @@ jobs:
       - name: Build site
         run: python3 build.py
       - name: Check the page script parses
+        run: node --check dist/assets/app.*.js
+      - name: Check every page and LLM file was written
         run: |
-          python3 - <<'EOF'
-          import re
-          s = open('dist/index.html', encoding='utf-8').read()
-          open('/tmp/course.js', 'w', encoding='utf-8').write(re.findall(r'<script>([\s\S]*?)</script>', s)[0])
-          EOF
-          node --check /tmp/course.js
+          test -f dist/index.html && test -f dist/llms.txt && test -f dist/llms-full.txt && test -f dist/404.html
+          test "$(ls dist/ch/*/index.html | wc -l)" -eq "$(python3 -c "import json;print(len(json.load(open('chapters/course.json'))['chapters']))")"
       - uses: actions/upload-artifact@v4
         with:
           name: ai-product-management-site

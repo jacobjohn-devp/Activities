@@ -1,0 +1,294 @@
+{
+ "title": "AI Product Management",
+ "tagline": "A 14-chapter course that takes experienced product managers to AI product management.",
+ "parts": [
+  {
+   "n": "I",
+   "title": "How the machine thinks",
+   "hue": "lime",
+   "blurb": "Accurate mental models of what an LLM is, how it is built and where its abilities stop. Everything later depends on these."
+  },
+  {
+   "n": "II",
+   "title": "Building blocks",
+   "hue": "sky",
+   "blurb": "The four levers an AI PM actually pulls: context, evals, agents and knowledge. This is where most quality is won or lost."
+  },
+  {
+   "n": "III",
+   "title": "Shipping AI products",
+   "hue": "orange",
+   "blurb": "Taking non-deterministic systems to production: how software gets built now, the UX of probabilistic features, reliability, unit economics and security."
+  },
+  {
+   "n": "IV",
+   "title": "Strategy and leadership",
+   "hue": "pink",
+   "blurb": "Making durable bets while the frontier moves every quarter, and reshaping the product team around it."
+  }
+ ],
+ "chapters": [
+  {
+   "id": 1,
+   "part": 0,
+   "shape": "disc",
+   "title": "The working vocabulary",
+   "sub": "Terminology · 7 lessons",
+   "shelf": "Durable concepts, perishable numbers",
+   "q": "Can you say exactly where a model’s knowledge lives, what one request costs and how its quality is measured?",
+   "slug": "the-working-vocabulary"
+  },
+  {
+   "id": 2,
+   "part": 0,
+   "shape": "ring",
+   "title": "How LLMs are built",
+   "sub": "Explainer · 6 lessons",
+   "shelf": "Durable",
+   "q": "Why does a model behave the way it does, and which of its failures are structural rather than bugs?",
+   "lessons": [
+    "Pretraining: next-token prediction at scale and what it actually learns",
+    "Post-training: SFT, preference tuning and RL with verifiable rewards",
+    "Reasoning models and test-time compute: buying accuracy with tokens",
+    "Why hallucination is structural, and the levers that reduce it",
+    "Tokenization quirks: counting, arithmetic, rare languages and code",
+    "Knowledge cutoffs, recency and why the model is confidently out of date"
+   ],
+   "lab": "Run a failure-mode probe: 30 prompts designed to break a model (counting, recency, false premises, long-tail facts). Classify every failure by cause.",
+   "out": "A one-page “how our model fails” memo for one product surface.",
+   "slug": "how-llms-are-built"
+  },
+  {
+   "id": 3,
+   "part": 0,
+   "shape": "half",
+   "title": "Reading the frontier",
+   "sub": "Capabilities · 5 lessons",
+   "shelf": "Perishable, refreshed quarterly",
+   "q": "Which model should we bet on this quarter, and how would we know if the answer changed?",
+   "lessons": [
+    "The jagged frontier: superhuman and brittle in the same model",
+    "Reading benchmarks: SWE-bench, GPQA, HLE, ARC-AGI, and contamination",
+    "pass@1 versus pass^k: capability is not reliability",
+    "Model tiers and release cadence across the major labs",
+    "Running your own bake-off on your own tasks"
+   ],
+   "lab": "Bake off three models on 20 real tasks from your backlog. Score quality, latency and cost per task.",
+   "out": "A model selection memo with a re-evaluation trigger.",
+   "slug": "reading-the-frontier"
+  },
+  {
+   "id": 4,
+   "part": 1,
+   "shape": "pill",
+   "title": "Context engineering",
+   "sub": "Building blocks · 6 lessons",
+   "shelf": "Shifting",
+   "q": "Given a fixed model, how do you get the best possible answer through what you put in front of it?",
+   "lessons": [
+    "From prompt writing to context design: what the model sees per call",
+    "System prompts, examples and structured outputs that hold up",
+    "Context rot: why more context can make answers worse",
+    "Memory, compaction and long-running sessions",
+    "Prompt caching and the economics of a stable prefix",
+    "Skills and progressive disclosure: loading context only when needed"
+   ],
+   "lab": "Take a failing feature and improve it with context changes alone, measured against a fixed eval.",
+   "out": "A context spec: what goes in, in what order, with what budget.",
+   "slug": "context-engineering"
+  },
+  {
+   "id": 5,
+   "part": 1,
+   "shape": "discs",
+   "title": "Evals are the spec",
+   "sub": "Quality · 6 lessons",
+   "shelf": "Durable",
+   "q": "How do you define “good” for a probabilistic feature precisely enough that engineering can ship against it?",
+   "lessons": [
+    "Error analysis first: reading 100 real outputs before writing a metric",
+    "Golden sets, rubrics and coverage of the long tail",
+    "LLM-as-judge: when it works, how to calibrate it against humans",
+    "Offline evals, online metrics and the gap between them",
+    "Regression gates for prompt, model and tool changes",
+    "Running an eval-driven roadmap"
+   ],
+   "lab": "Build a 50-case eval for a live feature, run it weekly, and report the trend.",
+   "out": "An eval spec that replaces the “requirements” section of your PRD.",
+   "slug": "evals-are-the-spec"
+  },
+  {
+   "id": 6,
+   "part": 1,
+   "shape": "stripes",
+   "title": "Agents and tool use",
+   "sub": "Systems · 6 lessons",
+   "shelf": "Shifting fast",
+   "q": "When should a model act rather than answer, and how do you keep a long chain of actions on track?",
+   "lessons": [
+    "The agent loop: model, tools, environment, stopping condition",
+    "Designing tools models can use well",
+    "MCP, A2A and skills: the emerging standard stack",
+    "Computer use and browser agents",
+    "Compounding error: why 95% per step is 36% over 20 steps",
+    "Autonomy levels, approvals and long-running background agents"
+   ],
+   "lab": "Build an agent with three MCP tools for a real workflow and trace every step of ten runs.",
+   "out": "An agent design doc with an autonomy level and failure budget.",
+   "slug": "agents-and-tool-use"
+  },
+  {
+   "id": 7,
+   "part": 1,
+   "shape": "half",
+   "title": "Knowledge and data",
+   "sub": "Data · 5 lessons",
+   "shelf": "Shifting",
+   "q": "Should knowledge live in the prompt, in an index, behind a tool or in the weights?",
+   "lessons": [
+    "Long context vs RAG vs agentic search vs fine-tuning",
+    "Embeddings, chunking, hybrid search and reranking",
+    "Freshness, permissions and provenance",
+    "Data flywheels: turning usage into quality",
+    "When fine-tuning (including RL fine-tuning) pays for itself"
+   ],
+   "lab": "Answer 40 questions over your own docs with long context and with RAG. Compare accuracy, latency and cost.",
+   "out": "A knowledge architecture decision record.",
+   "slug": "knowledge-and-data"
+  },
+  {
+   "id": 8,
+   "part": 2,
+   "shape": "disc",
+   "title": "AI coding, now and next",
+   "sub": "Engineering · 6 lessons",
+   "shelf": "Perishable, refreshed quarterly",
+   "q": "Coding agents now write a large share of code. Why hasn’t software output risen to match, and what is the PM’s new job?",
+   "lessons": [
+    "The landscape: IDE assistants, terminal agents, background and cloud agents",
+    "More code is not more software: review and integration become the bottleneck",
+    "Spec-driven development: the spec as the agent’s input",
+    "PMs who build: prototyping and internal tools with agents",
+    "Governance: tracing, permissions and code quality over time",
+    "Where it’s heading: longer autonomous runs, agents in CI, smaller teams"
+   ],
+   "lab": "Ship a working prototype with a coding agent in one day, then measure what review and hardening cost.",
+   "out": "A team playbook for agent-written code: who specs, who reviews, what gets merged.",
+   "slug": "ai-coding-now-and-next"
+  },
+  {
+   "id": 9,
+   "part": 2,
+   "shape": "ring",
+   "title": "Designing AI experiences",
+   "sub": "UX · 5 lessons",
+   "shelf": "Shifting",
+   "q": "How do you design for a system that is sometimes wrong, often slow and always a little unpredictable?",
+   "lessons": [
+    "The autonomy dial: suggest, draft, act with approval, act",
+    "Calibrating trust: sources, uncertainty and showing work",
+    "Failure UX: recovery, undo and graceful refusal",
+    "Latency UX: streaming, progress and background work",
+    "Steerability and feedback that actually improves the system"
+   ],
+   "lab": "Redesign one existing flow at three points on the autonomy dial and test them with five users.",
+   "out": "An interaction spec covering the happy path and the three most likely failures.",
+   "slug": "designing-ai-experiences"
+  },
+  {
+   "id": 10,
+   "part": 2,
+   "shape": "stripes",
+   "title": "Reliability and observability",
+   "sub": "Operations · 5 lessons",
+   "shelf": "Shifting",
+   "q": "How do you run, debug and upgrade a system whose output changes even when your code doesn’t?",
+   "lessons": [
+    "Tracing LLM and agent calls end to end",
+    "Guardrails, fallbacks and model cascades",
+    "Model upgrades: pinning, shadow runs and rollout",
+    "Drift, monitoring and incident response",
+    "SLOs for non-deterministic features"
+   ],
+   "lab": "Write and rehearse a model upgrade playbook using shadow traffic and your Chapter 5 eval.",
+   "out": "A runbook for model changes and AI incidents.",
+   "slug": "reliability-and-observability"
+  },
+  {
+   "id": 11,
+   "part": 2,
+   "shape": "pill",
+   "title": "Unit economics and pricing",
+   "sub": "Business · 5 lessons",
+   "shelf": "Perishable numbers, durable method",
+   "q": "What does this feature cost per user at the median and the 95th percentile, and how should we charge for it?",
+   "lessons": [
+    "Cost modeling: tokens, reasoning, tools and retries",
+    "Bending the curve: routing, caching, batching and smaller models",
+    "Why AI gross margins sit below classic SaaS",
+    "Seats, usage, hybrid and outcome-based pricing",
+    "Planning for falling prices and rising usage"
+   ],
+   "lab": "Model cost per user at median and heavy usage for a real feature, then test three pricing models against it.",
+   "out": "A pricing and margin brief for one AI feature.",
+   "slug": "unit-economics-and-pricing"
+  },
+  {
+   "id": 12,
+   "part": 2,
+   "shape": "discs",
+   "title": "Security, safety and governance",
+   "sub": "Risk · 5 lessons",
+   "shelf": "Shifting fast",
+   "q": "What can go wrong when a model reads untrusted content and can take actions, and who signs off?",
+   "lessons": [
+    "Prompt injection and the lethal trifecta: private data, untrusted input, a way out",
+    "Permissions and sandboxing for agents",
+    "Data handling, retention and residency",
+    "Regulation: the EU AI Act and what it asks of product teams",
+    "Red teaming and launch reviews"
+   ],
+   "lab": "Threat-model your Chapter 6 agent and attack it with ten injection attempts.",
+   "out": "A launch risk review template your security team accepts.",
+   "slug": "security-safety-and-governance"
+  },
+  {
+   "id": 13,
+   "part": 3,
+   "shape": "disc",
+   "title": "Strategy on a moving frontier",
+   "sub": "Strategy · 5 lessons",
+   "shelf": "Durable",
+   "q": "What will still be valuable when the next model is twice as capable and half the price?",
+   "lessons": [
+    "Build for the model six months out",
+    "Where moats actually come from: workflow, distribution, data, evals",
+    "Build, buy or wrap: platform risk and model dependence",
+    "Roadmapping when capabilities arrive unannounced",
+    "Telling a credible AI story to leadership"
+   ],
+   "lab": "Stress-test your roadmap: which items does a 2× better model make obsolete, and which does it unlock?",
+   "out": "A one-page AI strategy with explicit bets and kill criteria.",
+   "slug": "strategy-on-a-moving-frontier"
+  },
+  {
+   "id": 14,
+   "part": 3,
+   "shape": "ring",
+   "title": "The AI-native product team",
+   "sub": "Leadership + capstone",
+   "shelf": "Shifting",
+   "q": "How should a product team be shaped, staffed and run when everyone can build?",
+   "lessons": [
+    "Team shapes: smaller pods, PMs who build, engineers who spec",
+    "Who owns evals, context and model choice",
+    "Rituals: eval reviews, trace reviews, model upgrade days",
+    "Hiring and leveling for AI product roles",
+    "Capstone: the complete AI feature spec"
+   ],
+   "lab": "Capstone: take one AI feature from idea to a spec with evals, context design, agent design, economics, risks and rollout.",
+   "out": "A capstone spec, reviewed by a panel from product, engineering and security.",
+   "slug": "the-ai-native-product-team"
+  }
+ ]
+}

@@ -6,6 +6,9 @@
   "name": "activities",
   "compatibility_date": "2025-09-01",
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
+    // /ch/<slug>/ serves /ch/<slug>/index.html; unknown paths get 404.html
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
   }
 }

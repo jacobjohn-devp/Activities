@@ -30,7 +30,7 @@ h1, h2, h3 { text-wrap: balance; margin: 0; letter-spacing: -0.02em; font-family
 /* top bar */
 .bar { display: flex; justify-content: space-between; align-items: center; gap: var(--space-4); padding-bottom: var(--space-6); border-bottom: 1px solid var(--border); margin-bottom: var(--space-12); }
 .mark { font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; text-decoration: none; }
-.bar nav { display: flex; gap: var(--space-4); font-size: 14px; }
+.bar nav { display: flex; gap: var(--space-4); align-items: center; flex-wrap: wrap; justify-content: flex-end; font-size: 14px; }
 
 /* shared pieces */
 .tcard { background: var(--card); color: var(--on-card); padding: var(--space-4); position: relative; display: flex; flex-direction: column; justify-content: flex-end; }
@@ -194,7 +194,7 @@ dl.gloss dd .tag { height: 20px; margin-left: var(--space-2); font-size: 11px; v
   .hero-art { height: 260px; }
   dl.gloss { grid-template-columns: minmax(0, 1fr); }
   dl.gloss dt { border-bottom: 0; padding-bottom: 0; }
-  .bar nav { display: none; }
+  .bar nav > a { display: none; }
 }
 /* ---------- elevation layer ---------- */
 /* Type: Inter Tight for display, mono for every label, number and datum */
@@ -252,6 +252,20 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
   .lesson-note .pm li { font-size: 14px; line-height: 21px; }
 }
 .lesson-main > p:first-child { font-size: 18px; line-height: 29px; }
+
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + var(--space-6)); transform: translateX(-50%); z-index: 70; background: var(--card); color: var(--on-card); padding: var(--space-4) var(--space-6); width: min(420px, calc(100vw - 32px)); font-size: 14px; line-height: 20px; }
+.toast .eyebrow { color: var(--hue); }
+.toast p { margin: var(--space-1) 0 0; }
+.toast a { color: var(--on-card); }
+
+/* Prerendered page (what crawlers and no-JS readers see before the app takes over) */
+.prerender { max-width: 760px; padding-block: var(--space-6) var(--space-12); }
+.prerender h1 { font-size: 48px; line-height: 50px; margin-top: var(--space-2); }
+.prerender h2 { font-size: 28px; line-height: 34px; margin-top: var(--space-12); }
+.prerender .lede { font-size: 20px; line-height: 30px; }
+.prerender p, .prerender li { max-width: 66ch; }
+.prerender section { scroll-margin-top: var(--space-6); }
+.prerender .pager { gap: var(--space-6); }
 
 /* Lab checklists */
 .labsteps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); counter-reset: step; }
@@ -383,8 +397,8 @@ html { scroll-behavior: smooth; }
 
 <div class="wrap">
   <header class="bar">
-    <a class="mark" href="#home">Learning · AI Product Management</a>
-    <nav aria-label="Course"><a href="#home">All chapters</a><a href="#ch1">Start chapter 1</a><button type="button" class="theme-btn" id="theme-btn">Theme: system</button></nav>
+    <a class="mark" href="#home" data-route="home">Learning · AI Product Management</a>
+    <nav aria-label="Course"><a href="#home" data-route="home">All chapters</a><a href="#ch1" data-route="ch1">Start chapter 1</a><button type="button" class="theme-btn" id="hoppy-btn" aria-pressed="false" title="Show or hide Hoppy, the course buddy">Hoppy: off</button><button type="button" class="theme-btn" id="theme-btn">Theme: system</button></nav>
   </header>
   <main id="app"></main>
 </div>
@@ -421,84 +435,30 @@ html { scroll-behavior: smooth; }
 
 <script>
 (function () {
-var PARTS = [
-  { n: 'I', title: 'How the machine thinks', hue: 'lime', blurb: 'Accurate mental models of what an LLM is, how it is built and where its abilities stop. Everything later depends on these.' },
-  { n: 'II', title: 'Building blocks', hue: 'sky', blurb: 'The four levers an AI PM actually pulls: context, evals, agents and knowledge. This is where most quality is won or lost.' },
-  { n: 'III', title: 'Shipping AI products', hue: 'orange', blurb: 'Taking non-deterministic systems to production: how software gets built now, the UX of probabilistic features, reliability, unit economics and security.' },
-  { n: 'IV', title: 'Strategy and leadership', hue: 'pink', blurb: 'Making durable bets while the frontier moves every quarter, and reshaping the product team around it.' }
-];
-var CH = [
-  { id: 1, part: 0, shape: 'disc', title: 'The working vocabulary', sub: 'Terminology · 7 lessons', status: 'live', shelf: 'Durable concepts, perishable numbers',
-    q: 'Can you say exactly where a model’s knowledge lives, what one request costs and how its quality is measured?' },
-  { id: 2, part: 0, shape: 'ring', title: 'How LLMs are built', sub: 'Explainer · 6 lessons', shelf: 'Durable',
-    q: 'Why does a model behave the way it does, and which of its failures are structural rather than bugs?',
-    lessons: ['Pretraining: next-token prediction at scale and what it actually learns', 'Post-training: SFT, preference tuning and RL with verifiable rewards', 'Reasoning models and test-time compute: buying accuracy with tokens', 'Why hallucination is structural, and the levers that reduce it', 'Tokenization quirks: counting, arithmetic, rare languages and code', 'Knowledge cutoffs, recency and why the model is confidently out of date'],
-    lab: 'Run a failure-mode probe: 30 prompts designed to break a model (counting, recency, false premises, long-tail facts). Classify every failure by cause.',
-    out: 'A one-page “how our model fails” memo for one product surface.' },
-  { id: 3, part: 0, shape: 'half', title: 'Reading the frontier', sub: 'Capabilities · 5 lessons', shelf: 'Perishable, refreshed quarterly',
-    q: 'Which model should we bet on this quarter, and how would we know if the answer changed?',
-    lessons: ['The jagged frontier: superhuman and brittle in the same model', 'Reading benchmarks: SWE-bench, GPQA, HLE, ARC-AGI, and contamination', 'pass@1 versus pass^k: capability is not reliability', 'Model tiers and release cadence across the major labs', 'Running your own bake-off on your own tasks'],
-    lab: 'Bake off three models on 20 real tasks from your backlog. Score quality, latency and cost per task.',
-    out: 'A model selection memo with a re-evaluation trigger.' },
-  { id: 4, part: 1, shape: 'pill', title: 'Context engineering', sub: 'Building blocks · 6 lessons', shelf: 'Shifting',
-    q: 'Given a fixed model, how do you get the best possible answer through what you put in front of it?',
-    lessons: ['From prompt writing to context design: what the model sees per call', 'System prompts, examples and structured outputs that hold up', 'Context rot: why more context can make answers worse', 'Memory, compaction and long-running sessions', 'Prompt caching and the economics of a stable prefix', 'Skills and progressive disclosure: loading context only when needed'],
-    lab: 'Take a failing feature and improve it with context changes alone, measured against a fixed eval.',
-    out: 'A context spec: what goes in, in what order, with what budget.' },
-  { id: 5, part: 1, shape: 'discs', title: 'Evals are the spec', sub: 'Quality · 6 lessons', shelf: 'Durable',
-    q: 'How do you define “good” for a probabilistic feature precisely enough that engineering can ship against it?',
-    lessons: ['Error analysis first: reading 100 real outputs before writing a metric', 'Golden sets, rubrics and coverage of the long tail', 'LLM-as-judge: when it works, how to calibrate it against humans', 'Offline evals, online metrics and the gap between them', 'Regression gates for prompt, model and tool changes', 'Running an eval-driven roadmap'],
-    lab: 'Build a 50-case eval for a live feature, run it weekly, and report the trend.',
-    out: 'An eval spec that replaces the “requirements” section of your PRD.' },
-  { id: 6, part: 1, shape: 'stripes', title: 'Agents and tool use', sub: 'Systems · 6 lessons', shelf: 'Shifting fast',
-    q: 'When should a model act rather than answer, and how do you keep a long chain of actions on track?',
-    lessons: ['The agent loop: model, tools, environment, stopping condition', 'Designing tools models can use well', 'MCP, A2A and skills: the emerging standard stack', 'Computer use and browser agents', 'Compounding error: why 95% per step is 36% over 20 steps', 'Autonomy levels, approvals and long-running background agents'],
-    lab: 'Build an agent with three MCP tools for a real workflow and trace every step of ten runs.',
-    out: 'An agent design doc with an autonomy level and failure budget.' },
-  { id: 7, part: 1, shape: 'half', title: 'Knowledge and data', sub: 'Data · 5 lessons', shelf: 'Shifting',
-    q: 'Should knowledge live in the prompt, in an index, behind a tool or in the weights?',
-    lessons: ['Long context vs RAG vs agentic search vs fine-tuning', 'Embeddings, chunking, hybrid search and reranking', 'Freshness, permissions and provenance', 'Data flywheels: turning usage into quality', 'When fine-tuning (including RL fine-tuning) pays for itself'],
-    lab: 'Answer 40 questions over your own docs with long context and with RAG. Compare accuracy, latency and cost.',
-    out: 'A knowledge architecture decision record.' },
-  { id: 8, part: 2, shape: 'disc', title: 'AI coding, now and next', sub: 'Engineering · 6 lessons', shelf: 'Perishable, refreshed quarterly',
-    q: 'Coding agents now write a large share of code. Why hasn’t software output risen to match, and what is the PM’s new job?',
-    lessons: ['The landscape: IDE assistants, terminal agents, background and cloud agents', 'More code is not more software: review and integration become the bottleneck', 'Spec-driven development: the spec as the agent’s input', 'PMs who build: prototyping and internal tools with agents', 'Governance: tracing, permissions and code quality over time', 'Where it’s heading: longer autonomous runs, agents in CI, smaller teams'],
-    lab: 'Ship a working prototype with a coding agent in one day, then measure what review and hardening cost.',
-    out: 'A team playbook for agent-written code: who specs, who reviews, what gets merged.' },
-  { id: 9, part: 2, shape: 'ring', title: 'Designing AI experiences', sub: 'UX · 5 lessons', shelf: 'Shifting',
-    q: 'How do you design for a system that is sometimes wrong, often slow and always a little unpredictable?',
-    lessons: ['The autonomy dial: suggest, draft, act with approval, act', 'Calibrating trust: sources, uncertainty and showing work', 'Failure UX: recovery, undo and graceful refusal', 'Latency UX: streaming, progress and background work', 'Steerability and feedback that actually improves the system'],
-    lab: 'Redesign one existing flow at three points on the autonomy dial and test them with five users.',
-    out: 'An interaction spec covering the happy path and the three most likely failures.' },
-  { id: 10, part: 2, shape: 'stripes', title: 'Reliability and observability', sub: 'Operations · 5 lessons', shelf: 'Shifting',
-    q: 'How do you run, debug and upgrade a system whose output changes even when your code doesn’t?',
-    lessons: ['Tracing LLM and agent calls end to end', 'Guardrails, fallbacks and model cascades', 'Model upgrades: pinning, shadow runs and rollout', 'Drift, monitoring and incident response', 'SLOs for non-deterministic features'],
-    lab: 'Write and rehearse a model upgrade playbook using shadow traffic and your Chapter 5 eval.',
-    out: 'A runbook for model changes and AI incidents.' },
-  { id: 11, part: 2, shape: 'pill', title: 'Unit economics and pricing', sub: 'Business · 5 lessons', shelf: 'Perishable numbers, durable method',
-    q: 'What does this feature cost per user at the median and the 95th percentile, and how should we charge for it?',
-    lessons: ['Cost modeling: tokens, reasoning, tools and retries', 'Bending the curve: routing, caching, batching and smaller models', 'Why AI gross margins sit below classic SaaS', 'Seats, usage, hybrid and outcome-based pricing', 'Planning for falling prices and rising usage'],
-    lab: 'Model cost per user at median and heavy usage for a real feature, then test three pricing models against it.',
-    out: 'A pricing and margin brief for one AI feature.' },
-  { id: 12, part: 2, shape: 'discs', title: 'Security, safety and governance', sub: 'Risk · 5 lessons', shelf: 'Shifting fast',
-    q: 'What can go wrong when a model reads untrusted content and can take actions, and who signs off?',
-    lessons: ['Prompt injection and the lethal trifecta: private data, untrusted input, a way out', 'Permissions and sandboxing for agents', 'Data handling, retention and residency', 'Regulation: the EU AI Act and what it asks of product teams', 'Red teaming and launch reviews'],
-    lab: 'Threat-model your Chapter 6 agent and attack it with ten injection attempts.',
-    out: 'A launch risk review template your security team accepts.' },
-  { id: 13, part: 3, shape: 'disc', title: 'Strategy on a moving frontier', sub: 'Strategy · 5 lessons', shelf: 'Durable',
-    q: 'What will still be valuable when the next model is twice as capable and half the price?',
-    lessons: ['Build for the model six months out', 'Where moats actually come from: workflow, distribution, data, evals', 'Build, buy or wrap: platform risk and model dependence', 'Roadmapping when capabilities arrive unannounced', 'Telling a credible AI story to leadership'],
-    lab: 'Stress-test your roadmap: which items does a 2× better model make obsolete, and which does it unlock?',
-    out: 'A one-page AI strategy with explicit bets and kill criteria.' },
-  { id: 14, part: 3, shape: 'ring', title: 'The AI-native product team', sub: 'Leadership + capstone', shelf: 'Shifting',
-    q: 'How should a product team be shaped, staffed and run when everyone can build?',
-    lessons: ['Team shapes: smaller pods, PMs who build, engineers who spec', 'Who owns evals, context and model choice', 'Rituals: eval reviews, trace reviews, model upgrade days', 'Hiring and leveling for AI product roles', 'Capstone: the complete AI feature spec'],
-    lab: 'Capstone: take one AI feature from idea to a spec with evals, context design, agent design, economics, risks and rollout.',
-    out: 'A capstone spec, reviewed by a panel from product, engineering and security.' }
-];
+var COURSE = {} /*COURSE*/;
+var PARTS = COURSE.parts, CH = COURSE.chapters;
+/* Routes: on the published site each chapter has a real URL (/ch/<slug>/); inside a Claude artifact routes stay in the hash */
+var SITE = !!window.__SITE, BYSLUG = {};
+CH.forEach(function (c) { BYSLUG[c.slug] = c.id; });
+function pathFor(r) { var m = /^ch(\d+)$/.exec(r); return m ? '/ch/' + CH[+m[1] - 1].slug + '/' : '/'; }
+function currentRoute() {
+  var h = (location.hash || '').replace('#', '');
+  if (/^ch\d+$/.test(h) || h === 'home') return h;
+  if (SITE) { var m = /^\/ch\/([^\/]+)\/?$/.exec(location.pathname); if (m && BYSLUG[m[1]]) return 'ch' + BYSLUG[m[1]]; }
+  return 'home';
+}
+function setLink(a, r) { a.setAttribute('href', SITE ? pathFor(r) : '#' + r); a.dataset.route = r; }
+function linkify(root) {
+  (root || document).querySelectorAll('a[href^="#ch"], a[href="#home"]').forEach(function (a) { var r = a.getAttribute('href').slice(1); if (/^(ch\d+|home)$/.test(r)) setLink(a, r); });
+}
+function navigate(r) {
+  if (SITE) { history.pushState({}, '', pathFor(r)); route(); }
+  else if (location.hash === '#' + r) route(); else location.hash = r;
+}
+
 
 /* ---------- storage (per-viewer convenience only) ---------- */
-var CHDATA = {} /*CHDATA*/;
+var CHDATA = COURSE.data;
 function isLive(c) { return c.id === 1 || !!CHDATA[c.id]; }
 CH.forEach(function (c) { var d = CHDATA[c.id]; if (d) c.sub = c.sub.replace(/\d+ lessons/, d.lessons.length + ' lessons'); });
 var KEY = 'il-aipm-progress-v1', done = {};
@@ -556,126 +516,11 @@ function home() {
 }
 
 /* ---------- chapter 1 content ---------- */
-var LESSONS = [
-{ t: 'Why precision pays', shelf: 'Durable', html:
-'<p>Most bad AI product decisions trace back to a sentence that sounded fine in a meeting. “The model knows our docs.” “We’ll fine-tune it.” “The agent handles it.” Each hides a design choice with a different cost, latency, freshness and failure mode. This chapter gives you the vocabulary to turn those sentences into decisions.</p>' +
-'<p>Take “the model knows our docs”. It can mean four different systems:</p>' +
-'<div class="tbl"><table><thead><tr><th>Where the knowledge lives</th><th>Freshness</th><th>Cost driver</th><th>Typical failure</th></tr></thead><tbody>' +
-'<tr><td>In the weights (fine-tuned)</td><td>Frozen at training time</td><td>Training runs and re-runs</td><td>Confidently stale; can’t cite</td></tr>' +
-'<tr><td>In the context (pasted in)</td><td>As fresh as each request</td><td>Input tokens on every call</td><td>Context rot as volume grows</td></tr>' +
-'<tr><td>Retrieved (RAG)</td><td>As fresh as the index</td><td>Indexing plus some input tokens</td><td>Right answer never retrieved</td></tr>' +
-'<tr><td>Fetched by a tool (agentic search)</td><td>Live</td><td>Extra model turns and latency</td><td>Agent searches badly or stops early</td></tr>' +
-'</tbody></table></div>' +
-'<div class="pm"><p class="eyebrow">What changes for you</p><ul><li>When someone says the model “knows” or “remembers” something, ask where it lives. The answer decides your freshness guarantee and your unit cost.</li><li>Keep a shared glossary (the last lesson in this chapter has a starter one). Teams that use the same words ship faster.</li></ul></div>' },
+var LESSONS = CHDATA[1].lessons;
 
-{ t: 'Tokens, context and cost', shelf: 'Durable concepts, perishable numbers', html:
-'<p>A <strong>token</strong> is the unit a model reads and writes: a common word, a piece of a word, a punctuation mark. In English prose a token averages about three quarters of a word. Code, numbers, non-Latin scripts and unusual formatting use more tokens for the same content. Tokens are the unit of cost, speed and limits, so you should be able to estimate them as easily as you estimate story points.</p>' +
-'<h3>The context window</h3><p>The <strong>context window</strong> is everything the model sees in one call: system prompt, tool definitions, conversation history, retrieved documents, images, and the output it is writing. Frontier models now accept hundreds of thousands to around a million tokens. Two consequences matter more than the headline size:</p>' +
-'<ul><li><strong>Models are stateless.</strong> Between calls the model remembers nothing. “Memory” in a chat product is your application re-sending history, or a summary of it, on every turn. A 30-turn conversation pays for turn 1’s tokens 30 times unless you cache or compact.</li><li><strong>Bigger isn’t automatically better.</strong> Quality degrades as context fills, well before the limit. This is often called <strong>context rot</strong>: relevant facts in the middle of a long context get missed and irrelevant material distracts. Curating context beats maximising it (Chapter 4).</li></ul>' +
-'<h3>How you pay</h3><p>APIs price per million tokens, with <strong>output tokens</strong> typically several times the price of <strong>input tokens</strong>. Reasoning models also generate hidden <strong>thinking tokens</strong>, which are billed as output. <strong>Prompt caching</strong> lets a provider reuse an unchanged prefix (system prompt, tool definitions, a long document) at a large discount, often around 90% off the input price, so prompt structure is a cost decision: stable material first, variable material last. <strong>Batch</strong> APIs trade latency for a large discount on work that can wait hours.</p>' +
-'<div class="callout"><p class="eyebrow">Rule of thumb</p><p>Cost per request ≈ uncached input × input price + cached input × cache price + (output + thinking) × output price. The lab at the end of this chapter turns this into a model of a whole feature.</p></div>' +
-'<div class="pm"><p class="eyebrow">What changes for you</p><ul><li>Specify a token budget per request the way you’d specify a latency budget.</li><li>For chat and agent features, model cost per <em>session</em>, not per message. Session length is your biggest cost lever.</li><li>Ask engineering what share of input is cached. It’s often the cheapest win available.</li></ul></div>' },
+var QUIZ = CHDATA[1].quiz;
 
-{ t: 'Inference: sampling, structure and speed', shelf: 'Durable', html:
-'<p><strong>Inference</strong> is running a trained model to produce output. A model doesn’t emit a word. It produces a probability distribution over the next token, and a <strong>sampling</strong> strategy picks one. Then it repeats.</p>' +
-'<ul><li><strong>Temperature</strong> scales how adventurous sampling is. Low for extraction and classification, higher for brainstorming. <strong>Top-p</strong> limits sampling to the most likely tokens that together cover probability p.</li><li><strong>Determinism is not guaranteed</strong>, even at temperature 0. Batching and hardware differences mean the same input can produce different output. Design and test as if every response is a sample, because it is.</li><li><strong>Structured outputs</strong> constrain generation to a JSON schema, so downstream code can rely on the shape. They guarantee the format, not that the content is correct.</li><li><strong>Max tokens</strong> and <strong>stop sequences</strong> bound output length. A truncated answer is a common, silent failure.</li></ul>' +
-'<h3>Speed has three numbers</h3><div class="tbl"><table><thead><tr><th>Metric</th><th>What it means</th><th>What users feel</th></tr></thead><tbody>' +
-'<tr><td>Time to first token (TTFT)</td><td>Delay before output starts</td><td>“Is it working?”</td></tr>' +
-'<tr><td>Output tokens per second</td><td>Generation speed once started</td><td>Reading pace of a streamed answer</td></tr>' +
-'<tr><td>End-to-end latency</td><td>Request in to final token out, including thinking and tool calls</td><td>Time until they can act</td></tr></tbody></table></div>' +
-'<p><strong>Throughput</strong> and <strong>rate limits</strong> (requests and tokens per minute) cap how many users you can serve at once. Check them before launch, not during.</p>' +
-'<div class="pm"><p class="eyebrow">What changes for you</p><ul><li>Write latency requirements as TTFT plus end-to-end, per surface. Streaming makes a 10-second answer feel acceptable, but a 10-second TTFT doesn’t.</li><li>Because outputs are samples, acceptance criteria must be rates (“≥ 95% of eval cases pass”), never single examples.</li></ul></div>' },
-
-{ t: 'Kinds of models', shelf: 'Shifting', html:
-'<p>“The model” is rarely one thing. Most products end up using several, chosen per task.</p>' +
-'<ul><li><strong>Frontier vs small tiers.</strong> Each major lab ships a large, most-capable model and faster, cheaper tiers. The price gap between tiers is often 10× or more, and the small tier is frequently good enough for classification, routing, extraction and summarisation.</li><li><strong>Reasoning (“thinking”) models</strong> spend extra tokens working through a problem before answering. This is <strong>test-time compute</strong>: you buy accuracy on hard, multi-step problems with latency and cost. Many APIs expose a thinking budget or effort setting, which is a product decision.</li><li><strong>Open-weight vs closed.</strong> Open-weight models can be self-hosted, fine-tuned freely and kept inside your network. You take on hosting, scaling and safety work, and usually trail the frontier by months.</li><li><strong>Multimodal</strong> models take images, audio, documents or video as input, and some generate them.</li><li><strong>Embedding models</strong> turn text into vectors so similar meanings sit close together. They power search and retrieval and don’t generate text.</li><li><strong>Distillation</strong> trains a small model to imitate a large one. <strong>Quantization</strong> stores weights at lower precision to run cheaper and faster, at some quality cost. <strong>Mixture-of-experts</strong> models activate only part of their parameters per token, so parameter count and cost don’t move together.</li></ul>' +
-'<p>Every model has a <strong>knowledge cutoff</strong>, the date its training data ends, and a <strong>model card</strong> describing intended use, evaluations and known limits. Read both before you commit.</p>' +
-'<div class="pm"><p class="eyebrow">What changes for you</p><ul><li>Treat model choice as per-task routing, not a single vendor decision. A cascade (small model first, escalate when unsure) is a standard cost pattern.</li><li>Put the thinking budget in your spec. It’s a quality, latency and cost dial in one.</li><li>Pin model versions in production and plan upgrades deliberately (Chapter 10).</li></ul></div>' },
-
-{ t: 'The behaviour-change ladder', shelf: 'Durable', html:
-'<p>When a model doesn’t do what you want, there’s an ordered set of fixes. Each rung is slower and more expensive than the one below. Climb only when your evals show the rung below has plateaued.</p>' +
-'<div class="tbl"><table><thead><tr><th>Rung</th><th>What it changes</th><th>Time to try</th><th>Use when</th></tr></thead><tbody>' +
-'<tr><td>1. Instructions</td><td>The system prompt and task framing</td><td>Minutes</td><td>Always first</td></tr>' +
-'<tr><td>2. Examples</td><td>Few-shot demonstrations of good output</td><td>Hours</td><td>Format, tone or judgement is off</td></tr>' +
-'<tr><td>3. Context and tools</td><td>Retrieval, tool access, better inputs</td><td>Days</td><td>The model lacks facts or the ability to act</td></tr>' +
-'<tr><td>4. Model choice</td><td>A different tier, vendor or reasoning budget</td><td>Days</td><td>Capability is the ceiling</td></tr>' +
-'<tr><td>5. Fine-tuning</td><td>Weights, via SFT, preference tuning, RL fine-tuning or adapters such as LoRA</td><td>Weeks</td><td>A narrow, stable, high-volume task with lots of graded examples</td></tr>' +
-'<tr><td>6. Pretraining</td><td>A new base model</td><td>Months</td><td>Almost never, for product teams</td></tr></tbody></table></div>' +
-'<p><strong>Supervised fine-tuning (SFT)</strong> teaches from input-output pairs. <strong>Preference tuning</strong> (such as RLHF or DPO) teaches from “A is better than B”. <strong>RL fine-tuning</strong> rewards outputs that pass a grader, which works well when correctness can be checked automatically. Fine-tuning is mostly for <em>behaviour</em> (format, style, a specialised skill), and a poor way to add <em>facts</em>, which go stale and can’t be cited.</p>' +
-'<div class="callout"><p class="eyebrow">The trap</p><p>“We’ll fine-tune it” is often proposed at rung 1 to avoid the unglamorous work of rungs 2 and 3. Also, the next base model frequently beats last quarter’s fine-tune, which is a reason to keep your eval set and drop the custom weights.</p></div>' +
-'<div class="pm"><p class="eyebrow">What changes for you</p><ul><li>Ask “which rung are we on, and what did the eval say about the last one?” in every quality review.</li><li>Budget fine-tuning as a recurring cost, since each new base model invites a re-run.</li></ul></div>' },
-
-{ t: 'Agents and tools', shelf: 'Shifting fast', html:
-'<p><strong>Tool use</strong> (also called function calling) lets a model request an action, such as a search, an API call or running code, which your application executes and returns. An <strong>agent</strong> is a model in a loop: it decides on an action, observes the result and repeats until it judges the task done or hits a limit. The code around the model that runs this loop, manages context and enforces limits is the <strong>harness</strong> (or scaffold).</p>' +
-'<ul><li><strong>MCP (Model Context Protocol)</strong> is an open standard for connecting models to tools and data through “servers”. It’s the de facto way to plug systems into agents. Anthropic donated it to the Linux Foundation’s Agentic AI Foundation in December 2025.</li><li><strong>A2A (Agent2Agent)</strong> is a protocol for agents to discover and call other agents across vendors. MCP connects an agent to tools; A2A connects agents to each other.</li><li><strong>Skills</strong> package instructions, scripts and reference files that an agent loads only when a task needs them, which keeps the context small.</li><li><strong>Computer use</strong> lets a model operate a screen, keyboard and browser for software with no API.</li><li><strong>Subagents</strong> and <strong>orchestration</strong> split a large task across several model instances, each with its own focused context.</li><li><strong>Human in the loop</strong> means a person approves, edits or can interrupt the agent at defined points.</li></ul>' +
-'<div class="callout"><p class="eyebrow">Compounding error</p><p>If each step succeeds 95% of the time, a 20-step task succeeds about 36% of the time (0.95<sup>20</sup>). Long agent runs need per-step reliability far above what’s acceptable for a single answer, plus checkpoints and recovery.</p></div>' +
-'<div class="pm"><p class="eyebrow">What changes for you</p><ul><li>Specify an <strong>autonomy level</strong> for every agent feature: suggest, draft, act with approval, or act. It’s the most important line in an agent spec.</li><li>Define the stopping condition and the step and spend limits explicitly.</li><li>Treat tool descriptions as product copy. The model reads them, and their quality directly affects behaviour.</li></ul></div>' },
-
-{ t: 'Quality and evaluation', shelf: 'Durable', html:
-'<p>You can’t manage what you can’t measure, and with AI you can’t measure by trying a few examples.</p>' +
-'<ul><li><strong>Hallucination</strong> (or confabulation): fluent, confident output that isn’t supported by facts or the provided sources. It’s a property of how models generate, so it can be reduced but not removed.</li><li><strong>Grounding</strong>: tying answers to supplied sources, ideally with <strong>citations</strong> users can check.</li><li><strong>Evals</strong>: systematic tests of model behaviour. <strong>Offline evals</strong> run a fixed dataset before shipping. <strong>Online evals</strong> measure real usage: acceptance, edits, retries, escalations.</li><li><strong>Golden set</strong>: a curated set of inputs with expected outputs or grading rubrics, covering common cases and the long tail.</li><li><strong>LLM-as-judge</strong>: using a model to grade outputs against a rubric. Fast and scalable, but only trustworthy once calibrated against human grades.</li><li><strong>pass@k vs pass^k</strong>: pass@k is “at least one of k tries succeeds” (capability). pass^k is “all k tries succeed” (reliability). Benchmarks usually report the first; products live or die on the second.</li><li><strong>Benchmark contamination</strong>: test questions leaking into training data, which inflates scores. One reason to trust your own evals over leaderboards.</li><li><strong>Sycophancy</strong>: the tendency to agree with the user or tell them what they want to hear.</li><li><strong>Jagged frontier</strong>: models can be superhuman at one task and fail a nearby, easier one. Never extrapolate capability from a demo.</li></ul>' +
-'<div class="pm"><p class="eyebrow">What changes for you</p><ul><li>Your acceptance criteria are an eval. Write them as a dataset and a pass threshold, not prose (Chapter 5).</li><li>Ask for pass^k on the critical path. A feature that works 4 times in 5 feels broken to users.</li><li>Read real outputs every week. Error analysis is the PM’s highest-leverage habit in AI products.</li></ul></div>' }
-];
-
-var QUIZ = [
-{ q: 'A support bot’s cost per conversation has tripled since launch, with no change in traffic or prompts. What is the most likely cause?', o: ['The provider raised prices', 'Conversations got longer, and each turn re-sends the growing history', 'Temperature was set too high', 'The embedding model changed'], a: 1, w: 'Models are stateless, so each turn re-sends history. Longer sessions grow cost much faster than message count. Caching and compaction are the fixes.' },
-{ q: 'Engineering proposes fine-tuning so the model “knows” this quarter’s pricing. What’s the main problem?', o: ['Fine-tuning can’t change model behaviour', 'Facts in weights go stale and can’t be cited; pricing belongs in context or behind a tool', 'Fine-tuning always costs more than pretraining', 'Pricing data is too small to fine-tune on'], a: 1, w: 'Fine-tuning is for behaviour. Changing facts belong where they can be updated and cited: retrieval, context or a tool.' },
-{ q: 'Each step of a 20-step agent workflow succeeds 95% of the time. Roughly how often does the whole workflow succeed?', o: ['95%', '81%', '36%', '5%'], a: 2, w: '0.95²⁰ ≈ 0.36. Long chains need much higher per-step reliability, checkpoints or human approvals.' },
-{ q: 'Your critical-path feature passes 9 of 10 eval cases on a single run. Which number should you also ask for?', o: ['pass@10', 'pass^k: whether the same cases pass on every one of several runs', 'Benchmark rank', 'Tokens per second'], a: 1, w: 'Outputs are samples. pass^k measures consistency, which is what users experience.' },
-{ q: 'Where should a long, unchanging system prompt and tool list go to cut cost?', o: ['At the end of the prompt', 'At the start, as a stable prefix that prompt caching can reuse', 'In the model’s weights', 'In a separate request'], a: 1, w: 'Caching reuses an unchanged prefix at a large discount. Put stable material first and variable material last.' },
-{ q: 'A team sets temperature to 0 and writes tests expecting identical output every run. What should you tell them?', o: ['That’s correct', 'Determinism isn’t guaranteed even at temperature 0; test with rates, schemas and rubrics', 'Use temperature 1 instead', 'Disable streaming to make output deterministic'], a: 1, w: 'Batching and hardware variation mean outputs can differ. Assert on structure and graded quality, not exact strings.' },
-{ q: 'Which pairing is right?', o: ['MCP connects agents to each other; A2A connects agents to tools', 'MCP connects agents to tools and data; A2A connects agents to other agents', 'Both are model training methods', 'MCP is a benchmark; A2A is a pricing model'], a: 1, w: 'They’re complementary layers, and a serious agent deployment often uses both.' },
-{ q: 'A reasoning model gives better answers but blows the latency budget on a simple classification task. What’s the best first move?', o: ['Fine-tune the reasoning model', 'Route this task to a small, non-reasoning tier, or lower the thinking budget, and check the eval', 'Increase max tokens', 'Remove the system prompt'], a: 1, w: 'Test-time compute buys accuracy on hard multi-step problems. Simple tasks rarely need it. Route per task and let the eval decide.' }
-];
-
-var GLOSS = [
-['A2A (Agent2Agent)', 'Protocol for agents to discover and call other agents across vendors.', 'Agents'],
-['Agent', 'A model in a loop that chooses actions, observes results and repeats until done or stopped.', 'Agents'],
-['Autonomy level', 'How much an AI feature may do without a person: suggest, draft, act with approval, act.', 'Agents'],
-['Batch API', 'Discounted, asynchronous processing for work that can wait hours.', 'Cost'],
-['Benchmark contamination', 'Test data leaking into training data, inflating scores.', 'Quality'],
-['Citation', 'A pointer from an answer to the source passage supporting it.', 'Quality'],
-['Computer use', 'A model operating a screen, keyboard and browser directly.', 'Agents'],
-['Context engineering', 'Designing everything the model sees per call: instructions, examples, retrieved data, tools, history.', 'Context'],
-['Context rot', 'Quality loss as context grows long or noisy, well before the window limit.', 'Context'],
-['Context window', 'The maximum tokens a model can consider in one call, input and output combined.', 'Context'],
-['Distillation', 'Training a smaller model to imitate a larger one.', 'Models'],
-['Embedding', 'A vector representing meaning, used for search and similarity.', 'Models'],
-['Eval', 'A systematic test of model behaviour against a dataset and grading method.', 'Quality'],
-['Fine-tuning', 'Further training a model’s weights on your examples to change behaviour.', 'Models'],
-['Golden set', 'A curated eval dataset of representative and edge-case inputs with expected results.', 'Quality'],
-['Grounding', 'Constraining answers to supplied sources.', 'Quality'],
-['Hallucination', 'Fluent, confident output not supported by facts or sources.', 'Quality'],
-['Harness', 'The code around a model that runs the agent loop, manages context and enforces limits.', 'Agents'],
-['Human in the loop', 'A person approves, edits or can interrupt at defined points.', 'Agents'],
-['Inference', 'Running a trained model to produce output.', 'Models'],
-['Jagged frontier', 'Uneven capability: superhuman at some tasks, failing at nearby easier ones.', 'Quality'],
-['Knowledge cutoff', 'The date a model’s training data ends.', 'Models'],
-['LLM-as-judge', 'Using a model to grade outputs against a rubric; needs calibration against humans.', 'Quality'],
-['LoRA', 'A cheap fine-tuning method that trains small adapter weights instead of the whole model.', 'Models'],
-['MCP (Model Context Protocol)', 'Open standard for connecting models to tools and data via servers.', 'Agents'],
-['Mixture-of-experts', 'Architecture that activates only part of the model per token.', 'Models'],
-['Open-weight model', 'A model whose weights are published, so you can host and modify it.', 'Models'],
-['pass@k', 'Probability at least one of k attempts succeeds: a measure of capability.', 'Quality'],
-['pass^k', 'Probability all k attempts succeed: a measure of reliability.', 'Quality'],
-['Prompt caching', 'Reusing an unchanged prompt prefix across calls at a discount.', 'Cost'],
-['Prompt injection', 'Untrusted content containing instructions that hijack the model.', 'Agents'],
-['Quantization', 'Storing weights at lower precision to run cheaper and faster.', 'Models'],
-['RAG', 'Retrieval-augmented generation: fetching relevant documents into context at request time.', 'Context'],
-['Rate limit', 'Cap on requests or tokens per minute for an account.', 'Cost'],
-['Reasoning model', 'A model that generates thinking tokens before answering, trading cost and latency for accuracy.', 'Models'],
-['RL fine-tuning', 'Fine-tuning that rewards outputs passing an automated grader.', 'Models'],
-['Skill', 'A package of instructions and files an agent loads only when a task needs it.', 'Agents'],
-['Structured output', 'Generation constrained to a schema such as JSON.', 'Models'],
-['Subagent', 'A separate model instance given a focused sub-task and its own context.', 'Agents'],
-['Sycophancy', 'Tendency to agree with or flatter the user.', 'Quality'],
-['Temperature', 'Sampling setting: lower is more predictable, higher is more varied.', 'Models'],
-['Test-time compute', 'Spending more computation at inference, such as thinking, to improve answers.', 'Models'],
-['Thinking tokens', 'Tokens a reasoning model generates before its answer, billed as output.', 'Cost'],
-['Token', 'The unit a model reads and writes: roughly ¾ of an English word.', 'Cost'],
-['Tool use', 'A model requesting an action that the application executes and returns.', 'Agents'],
-['TTFT', 'Time to first token: the delay before output begins.', 'Cost']
-];
+var GLOSS = CHDATA[1].glossary.map(function (g) { return [g.term, g.def, g.area]; });
 
 /* ---------- explainers: interactive diagrams inside lessons (keyed by lesson index) ---------- */
 var XP = {
@@ -1009,6 +854,18 @@ var Hop = (function () {
       txt = document.getElementById('btext'), go = document.getElementById('bgo'), close = document.getElementById('bclose');
   var IDLE_MS = 60000, SIZE = 64, timer = null, anim = null, x = -SIZE, state = 'off', helpedThisPage = false;
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* Hoppy is opt-in: off unless this viewer has switched him on */
+  var enabled = false;
+  try { enabled = localStorage.getItem('il-hoppy') === 'on'; } catch (e) {}
+  var btn = document.getElementById('hoppy-btn');
+  function syncBtn() { if (btn) { btn.textContent = 'Hoppy: ' + (enabled ? 'on' : 'off'); btn.setAttribute('aria-pressed', String(enabled)); } }
+  function setEnabled(on) {
+    enabled = on; syncBtn();
+    try { localStorage.setItem('il-hoppy', on ? 'on' : 'off'); } catch (e) {}
+    if (on) { helpedThisPage = false; arm(); flyBy(); }
+    else { clearTimeout(timer); hideAll(); pk.hidden = true; }
+  }
+  if (btn) btn.addEventListener('click', function () { setEnabled(!enabled); });
   function vw() { return document.documentElement.clientWidth; }
   function inset() { return Math.max(16, vw() > 1200 ? (vw() - 1120) / 2 - SIZE - 16 : 16); }
   function place(px) { x = px; el.style.transform = 'translateX(' + px + 'px)'; }
@@ -1027,12 +884,12 @@ var Hop = (function () {
   function hideAll() { bub.hidden = true; if (anim) { anim.cancel(); anim = null; } cr.classList.remove('hopping', 'waving', 'idle'); el.hidden = true; place(-SIZE); state = 'off'; }
   /* A quick pass across the page each time a new page opens */
   function flyBy() {
-    if (state === 'helping') return;
+    if (!enabled || state === 'helping') return;
     state = 'passing'; place(-SIZE);
     hopTo(vw() + SIZE, function () { if (state === 'passing') hideAll(); });
   }
   function hint() {
-    var h = (location.hash || '').replace('#', ''), m = /^ch(\d+)$/.exec(h), id = m ? +m[1] : 0;
+    var m = /^ch(\d+)$/.exec(currentRoute()), id = m ? +m[1] : 0;
     if (!id) return { t: 'Not sure where to start? Chapter 1 builds the vocabulary everything else uses, in about two hours.', go: 'Start chapter 1', href: '#ch1' };
     if (id > 1 && !CHDATA[id]) return { t: 'Chapter ' + id + ' is still an outline. Chapter 1 is ready to work through now.', go: 'Open chapter 1', href: '#ch1' };
     var secs = ['lab', 'quiz', 'glossary', 'deliverable'].map(function (s) { return document.getElementById(s); }), here = null;
@@ -1046,11 +903,11 @@ var Hop = (function () {
     return { t: 'Taking a while on “' + name + '”? Every term is defined in the glossary, and the quiz checks what stuck.', go: 'Open the glossary', href: '#ch1', jump: 'glossary' };
   }
   function help() {
-    if (helpedThisPage || state === 'helping') return;
+    if (!enabled || helpedThisPage || state === 'helping') return;
     helpedThisPage = true; state = 'helping';
     var hnt = hint();
     resetBubble();
-    txt.textContent = hnt.t; go.textContent = hnt.go; go.setAttribute('href', hnt.href || '#'); go.dataset.jump = hnt.jump || '';
+    txt.textContent = hnt.t; go.textContent = hnt.go; if (hnt.href) setLink(go, hnt.href.slice(1)); else { go.setAttribute('href', '#'); delete go.dataset.route; } go.dataset.jump = hnt.jump || '';
     go.dataset.dismiss = hnt.href ? '' : '1';
     place(-SIZE);
     hopTo(vw() - SIZE - inset(), function () {
@@ -1066,13 +923,20 @@ var Hop = (function () {
   function resetBubble() { eyebrow.textContent = 'Hoppy says'; gift.hidden = true; gift.innerHTML = ''; bub.classList.remove('wide'); close.textContent = 'Not now'; }
 
   /* Chapter finished: Hoppy glides in, jumps for joy, and hands over a piece of space junk */
+  function toast(ch, item) {
+    var t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status');
+    t.innerHTML = '<p class="eyebrow">Chapter ' + ch.id + ' complete</p><p>' + esc(item.name) + ' is in your hangar. <a href="#home" data-route="home">See it</a></p>';
+    linkify(t); t.querySelector('a').addEventListener('click', function () { pendingJump = 'hangar'; });
+    document.body.appendChild(t); setTimeout(function () { t.remove(); }, 6000);
+  }
   function celebrate(ch, item) {
+    if (!enabled) { toast(ch, item); return; }
     clearTimeout(timer); helpedThisPage = true; state = 'helping'; bub.hidden = true;
     eyebrow.textContent = 'Chapter ' + ch.id + ' complete';
     txt.textContent = 'You finished “' + ch.title + '”. Hoppy went into orbit and brought you something for your hangar.';
     gift.innerHTML = '<div class="gift"><div class="gift-art">' + junkSVG(item) + '</div><div><strong>' + esc(item.name) + '</strong><span class="yr">' + esc(item.year) + '</span><p>' + esc(item.fact) + '</p></div></div>';
     gift.hidden = false; bub.classList.add('wide');
-    go.textContent = 'See your hangar'; go.setAttribute('href', '#home'); go.dataset.jump = 'hangar'; go.dataset.dismiss = '';
+    go.textContent = 'See your hangar'; setLink(go, 'home'); go.dataset.jump = 'hangar'; go.dataset.dismiss = '';
     close.textContent = 'Back to it';
     if (el.hidden) place(-SIZE);
     hopTo(vw() - SIZE - inset(), function () {
@@ -1103,13 +967,13 @@ var Hop = (function () {
   window.addEventListener('scroll', function () {
     clearTimeout(scrollT);
     scrollT = setTimeout(function () {
-      if (reduce || peeking || state !== 'off' || Date.now() - lastPeek < 20000 || Math.random() > 0.35) return;
+      if (!enabled || reduce || peeking || state !== 'off' || Date.now() - lastPeek < 20000 || Math.random() > 0.35) return;
       peek();
     }, 400);
   }, { passive: true });
 
   function leave() { bub.hidden = true; cr.classList.remove('waving'); state = 'leaving'; hopTo(vw() + SIZE, function () { if (state === 'leaving') hideAll(); }); }
-  function arm() { clearTimeout(timer); timer = setTimeout(help, IDLE_MS); }
+  function arm() { clearTimeout(timer); if (enabled) timer = setTimeout(help, IDLE_MS); }
   function activity() { if (state !== 'helping') arm(); }
   ['scroll', 'pointerdown', 'keydown', 'input'].forEach(function (ev) { window.addEventListener(ev, activity, { passive: true }); });
   document.addEventListener('visibilitychange', function () { if (document.hidden) clearTimeout(timer); else activity(); });
@@ -1117,23 +981,25 @@ var Hop = (function () {
   go.addEventListener('click', function (e) {
     if (go.dataset.dismiss) { e.preventDefault(); leave(); return; }
     if (go.dataset.jump) {
-      if (location.hash === go.getAttribute('href')) { e.preventDefault(); var t = document.getElementById(go.dataset.jump); if (t) t.scrollIntoView(); }
+      if (go.dataset.route === currentRoute()) { e.preventDefault(); var t = document.getElementById(go.dataset.jump); if (t) t.scrollIntoView(); }
       else pendingJump = go.dataset.jump;
     }
     leave();
   });
   cr.addEventListener('click', blink);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && state === 'helping') leave(); });
+  syncBtn();
   return { celebrate: celebrate, onRoute: function () { helpedThisPage = false; if (state === 'helping') { bub.hidden = true; cr.classList.remove('waving'); state = 'off'; } arm(); setTimeout(flyBy, 400); } };
 })();
 
 /* ---------- router ---------- */
 var app = document.getElementById('app');
 function route() {
-  var hsh = (location.hash || '').replace('#', ''), m = /^ch(\d+)$/.exec(hsh), c = m ? CH[+m[1] - 1] : null;
+  var hsh = (location.hash || '').replace('#', ''), m = /^ch(\d+)$/.exec(currentRoute()), c = m ? CH[+m[1] - 1] : null;
   if (c) {
     document.body.className = 'is-chapter hue-' + hueOf(c);
     app.innerHTML = c.id === 1 ? chapter1() : CHDATA[c.id] ? chapterPage(c, CHDATA[c.id]) : planned(c);
+    if (SITE) document.title = c.title + ' · AI Product Management';
     if (c.id === 1) { calc(); renderGloss(); initExplainers(); }
     window.scrollTo(0, 0);
     readline.hidden = false; updateReadline();
@@ -1141,8 +1007,10 @@ function route() {
     document.body.className = '';
     readline.hidden = true;
     app.innerHTML = home();
+    if (SITE) document.title = 'AI Product Management · A course for product managers';
     if (/^part-\d$/.test(hsh)) { var el = document.getElementById(hsh); if (el) el.scrollIntoView(); } else window.scrollTo(0, 0);
   }
+  linkify();
   if (pendingJump) { var pj = document.getElementById(pendingJump); pendingJump = null; if (pj) pj.scrollIntoView(); }
   Hop.onRoute();
 }
@@ -1170,6 +1038,12 @@ app.addEventListener('click', function (e) {
   if (b) { gcat = b.dataset.cat; document.querySelectorAll('[data-cat]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); renderGloss(); }
 });
 window.addEventListener('hashchange', route);
+window.addEventListener('popstate', route);
+document.addEventListener('click', function (e) {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  var a = e.target.closest('a[data-route]'); if (!a) return;
+  e.preventDefault(); navigate(a.dataset.route);
+});
 route();
 })();
 </script>

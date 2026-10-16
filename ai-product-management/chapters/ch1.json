@@ -1,0 +1,362 @@
+{
+ "id": 1,
+ "lessons": [
+  {
+   "t": "Why precision pays",
+   "shelf": "Durable",
+   "html": "<p>Most bad AI product decisions trace back to a sentence that sounded fine in a meeting. “The model knows our docs.” “We’ll fine-tune it.” “The agent handles it.” Each hides a design choice with a different cost, latency, freshness and failure mode. This chapter gives you the vocabulary to turn those sentences into decisions.</p><p>Take “the model knows our docs”. It can mean four different systems:</p><div class=\"tbl\"><table><thead><tr><th>Where the knowledge lives</th><th>Freshness</th><th>Cost driver</th><th>Typical failure</th></tr></thead><tbody><tr><td>In the weights (fine-tuned)</td><td>Frozen at training time</td><td>Training runs and re-runs</td><td>Confidently stale; can’t cite</td></tr><tr><td>In the context (pasted in)</td><td>As fresh as each request</td><td>Input tokens on every call</td><td>Context rot as volume grows</td></tr><tr><td>Retrieved (RAG)</td><td>As fresh as the index</td><td>Indexing plus some input tokens</td><td>Right answer never retrieved</td></tr><tr><td>Fetched by a tool (agentic search)</td><td>Live</td><td>Extra model turns and latency</td><td>Agent searches badly or stops early</td></tr></tbody></table></div><div class=\"pm\"><p class=\"eyebrow\">What changes for you</p><ul><li>When someone says the model “knows” or “remembers” something, ask where it lives. The answer decides your freshness guarantee and your unit cost.</li><li>Keep a shared glossary (the last lesson in this chapter has a starter one). Teams that use the same words ship faster.</li></ul></div>"
+  },
+  {
+   "t": "Tokens, context and cost",
+   "shelf": "Durable concepts, perishable numbers",
+   "html": "<p>A <strong>token</strong> is the unit a model reads and writes: a common word, a piece of a word, a punctuation mark. In English prose a token averages about three quarters of a word. Code, numbers, non-Latin scripts and unusual formatting use more tokens for the same content. Tokens are the unit of cost, speed and limits, so you should be able to estimate them as easily as you estimate story points.</p><h3>The context window</h3><p>The <strong>context window</strong> is everything the model sees in one call: system prompt, tool definitions, conversation history, retrieved documents, images, and the output it is writing. Frontier models now accept hundreds of thousands to around a million tokens. Two consequences matter more than the headline size:</p><ul><li><strong>Models are stateless.</strong> Between calls the model remembers nothing. “Memory” in a chat product is your application re-sending history, or a summary of it, on every turn. A 30-turn conversation pays for turn 1’s tokens 30 times unless you cache or compact.</li><li><strong>Bigger isn’t automatically better.</strong> Quality degrades as context fills, well before the limit. This is often called <strong>context rot</strong>: relevant facts in the middle of a long context get missed and irrelevant material distracts. Curating context beats maximising it (Chapter 4).</li></ul><h3>How you pay</h3><p>APIs price per million tokens, with <strong>output tokens</strong> typically several times the price of <strong>input tokens</strong>. Reasoning models also generate hidden <strong>thinking tokens</strong>, which are billed as output. <strong>Prompt caching</strong> lets a provider reuse an unchanged prefix (system prompt, tool definitions, a long document) at a large discount, often around 90% off the input price, so prompt structure is a cost decision: stable material first, variable material last. <strong>Batch</strong> APIs trade latency for a large discount on work that can wait hours.</p><div class=\"callout\"><p class=\"eyebrow\">Rule of thumb</p><p>Cost per request ≈ uncached input × input price + cached input × cache price + (output + thinking) × output price. The lab at the end of this chapter turns this into a model of a whole feature.</p></div><div class=\"pm\"><p class=\"eyebrow\">What changes for you</p><ul><li>Specify a token budget per request the way you’d specify a latency budget.</li><li>For chat and agent features, model cost per <em>session</em>, not per message. Session length is your biggest cost lever.</li><li>Ask engineering what share of input is cached. It’s often the cheapest win available.</li></ul></div>"
+  },
+  {
+   "t": "Inference: sampling, structure and speed",
+   "shelf": "Durable",
+   "html": "<p><strong>Inference</strong> is running a trained model to produce output. A model doesn’t emit a word. It produces a probability distribution over the next token, and a <strong>sampling</strong> strategy picks one. Then it repeats.</p><ul><li><strong>Temperature</strong> scales how adventurous sampling is. Low for extraction and classification, higher for brainstorming. <strong>Top-p</strong> limits sampling to the most likely tokens that together cover probability p.</li><li><strong>Determinism is not guaranteed</strong>, even at temperature 0. Batching and hardware differences mean the same input can produce different output. Design and test as if every response is a sample, because it is.</li><li><strong>Structured outputs</strong> constrain generation to a JSON schema, so downstream code can rely on the shape. They guarantee the format, not that the content is correct.</li><li><strong>Max tokens</strong> and <strong>stop sequences</strong> bound output length. A truncated answer is a common, silent failure.</li></ul><h3>Speed has three numbers</h3><div class=\"tbl\"><table><thead><tr><th>Metric</th><th>What it means</th><th>What users feel</th></tr></thead><tbody><tr><td>Time to first token (TTFT)</td><td>Delay before output starts</td><td>“Is it working?”</td></tr><tr><td>Output tokens per second</td><td>Generation speed once started</td><td>Reading pace of a streamed answer</td></tr><tr><td>End-to-end latency</td><td>Request in to final token out, including thinking and tool calls</td><td>Time until they can act</td></tr></tbody></table></div><p><strong>Throughput</strong> and <strong>rate limits</strong> (requests and tokens per minute) cap how many users you can serve at once. Check them before launch, not during.</p><div class=\"pm\"><p class=\"eyebrow\">What changes for you</p><ul><li>Write latency requirements as TTFT plus end-to-end, per surface. Streaming makes a 10-second answer feel acceptable, but a 10-second TTFT doesn’t.</li><li>Because outputs are samples, acceptance criteria must be rates (“≥ 95% of eval cases pass”), never single examples.</li></ul></div>"
+  },
+  {
+   "t": "Kinds of models",
+   "shelf": "Shifting",
+   "html": "<p>“The model” is rarely one thing. Most products end up using several, chosen per task.</p><ul><li><strong>Frontier vs small tiers.</strong> Each major lab ships a large, most-capable model and faster, cheaper tiers. The price gap between tiers is often 10× or more, and the small tier is frequently good enough for classification, routing, extraction and summarisation.</li><li><strong>Reasoning (“thinking”) models</strong> spend extra tokens working through a problem before answering. This is <strong>test-time compute</strong>: you buy accuracy on hard, multi-step problems with latency and cost. Many APIs expose a thinking budget or effort setting, which is a product decision.</li><li><strong>Open-weight vs closed.</strong> Open-weight models can be self-hosted, fine-tuned freely and kept inside your network. You take on hosting, scaling and safety work, and usually trail the frontier by months.</li><li><strong>Multimodal</strong> models take images, audio, documents or video as input, and some generate them.</li><li><strong>Embedding models</strong> turn text into vectors so similar meanings sit close together. They power search and retrieval and don’t generate text.</li><li><strong>Distillation</strong> trains a small model to imitate a large one. <strong>Quantization</strong> stores weights at lower precision to run cheaper and faster, at some quality cost. <strong>Mixture-of-experts</strong> models activate only part of their parameters per token, so parameter count and cost don’t move together.</li></ul><p>Every model has a <strong>knowledge cutoff</strong>, the date its training data ends, and a <strong>model card</strong> describing intended use, evaluations and known limits. Read both before you commit.</p><div class=\"pm\"><p class=\"eyebrow\">What changes for you</p><ul><li>Treat model choice as per-task routing, not a single vendor decision. A cascade (small model first, escalate when unsure) is a standard cost pattern.</li><li>Put the thinking budget in your spec. It’s a quality, latency and cost dial in one.</li><li>Pin model versions in production and plan upgrades deliberately (Chapter 10).</li></ul></div>"
+  },
+  {
+   "t": "The behaviour-change ladder",
+   "shelf": "Durable",
+   "html": "<p>When a model doesn’t do what you want, there’s an ordered set of fixes. Each rung is slower and more expensive than the one below. Climb only when your evals show the rung below has plateaued.</p><div class=\"tbl\"><table><thead><tr><th>Rung</th><th>What it changes</th><th>Time to try</th><th>Use when</th></tr></thead><tbody><tr><td>1. Instructions</td><td>The system prompt and task framing</td><td>Minutes</td><td>Always first</td></tr><tr><td>2. Examples</td><td>Few-shot demonstrations of good output</td><td>Hours</td><td>Format, tone or judgement is off</td></tr><tr><td>3. Context and tools</td><td>Retrieval, tool access, better inputs</td><td>Days</td><td>The model lacks facts or the ability to act</td></tr><tr><td>4. Model choice</td><td>A different tier, vendor or reasoning budget</td><td>Days</td><td>Capability is the ceiling</td></tr><tr><td>5. Fine-tuning</td><td>Weights, via SFT, preference tuning, RL fine-tuning or adapters such as LoRA</td><td>Weeks</td><td>A narrow, stable, high-volume task with lots of graded examples</td></tr><tr><td>6. Pretraining</td><td>A new base model</td><td>Months</td><td>Almost never, for product teams</td></tr></tbody></table></div><p><strong>Supervised fine-tuning (SFT)</strong> teaches from input-output pairs. <strong>Preference tuning</strong> (such as RLHF or DPO) teaches from “A is better than B”. <strong>RL fine-tuning</strong> rewards outputs that pass a grader, which works well when correctness can be checked automatically. Fine-tuning is mostly for <em>behaviour</em> (format, style, a specialised skill), and a poor way to add <em>facts</em>, which go stale and can’t be cited.</p><div class=\"callout\"><p class=\"eyebrow\">The trap</p><p>“We’ll fine-tune it” is often proposed at rung 1 to avoid the unglamorous work of rungs 2 and 3. Also, the next base model frequently beats last quarter’s fine-tune, which is a reason to keep your eval set and drop the custom weights.</p></div><div class=\"pm\"><p class=\"eyebrow\">What changes for you</p><ul><li>Ask “which rung are we on, and what did the eval say about the last one?” in every quality review.</li><li>Budget fine-tuning as a recurring cost, since each new base model invites a re-run.</li></ul></div>"
+  },
+  {
+   "t": "Agents and tools",
+   "shelf": "Shifting fast",
+   "html": "<p><strong>Tool use</strong> (also called function calling) lets a model request an action, such as a search, an API call or running code, which your application executes and returns. An <strong>agent</strong> is a model in a loop: it decides on an action, observes the result and repeats until it judges the task done or hits a limit. The code around the model that runs this loop, manages context and enforces limits is the <strong>harness</strong> (or scaffold).</p><ul><li><strong>MCP (Model Context Protocol)</strong> is an open standard for connecting models to tools and data through “servers”. It’s the de facto way to plug systems into agents. Anthropic donated it to the Linux Foundation’s Agentic AI Foundation in December 2025.</li><li><strong>A2A (Agent2Agent)</strong> is a protocol for agents to discover and call other agents across vendors. MCP connects an agent to tools; A2A connects agents to each other.</li><li><strong>Skills</strong> package instructions, scripts and reference files that an agent loads only when a task needs them, which keeps the context small.</li><li><strong>Computer use</strong> lets a model operate a screen, keyboard and browser for software with no API.</li><li><strong>Subagents</strong> and <strong>orchestration</strong> split a large task across several model instances, each with its own focused context.</li><li><strong>Human in the loop</strong> means a person approves, edits or can interrupt the agent at defined points.</li></ul><div class=\"callout\"><p class=\"eyebrow\">Compounding error</p><p>If each step succeeds 95% of the time, a 20-step task succeeds about 36% of the time (0.95<sup>20</sup>). Long agent runs need per-step reliability far above what’s acceptable for a single answer, plus checkpoints and recovery.</p></div><div class=\"pm\"><p class=\"eyebrow\">What changes for you</p><ul><li>Specify an <strong>autonomy level</strong> for every agent feature: suggest, draft, act with approval, or act. It’s the most important line in an agent spec.</li><li>Define the stopping condition and the step and spend limits explicitly.</li><li>Treat tool descriptions as product copy. The model reads them, and their quality directly affects behaviour.</li></ul></div>"
+  },
+  {
+   "t": "Quality and evaluation",
+   "shelf": "Durable",
+   "html": "<p>You can’t manage what you can’t measure, and with AI you can’t measure by trying a few examples.</p><ul><li><strong>Hallucination</strong> (or confabulation): fluent, confident output that isn’t supported by facts or the provided sources. It’s a property of how models generate, so it can be reduced but not removed.</li><li><strong>Grounding</strong>: tying answers to supplied sources, ideally with <strong>citations</strong> users can check.</li><li><strong>Evals</strong>: systematic tests of model behaviour. <strong>Offline evals</strong> run a fixed dataset before shipping. <strong>Online evals</strong> measure real usage: acceptance, edits, retries, escalations.</li><li><strong>Golden set</strong>: a curated set of inputs with expected outputs or grading rubrics, covering common cases and the long tail.</li><li><strong>LLM-as-judge</strong>: using a model to grade outputs against a rubric. Fast and scalable, but only trustworthy once calibrated against human grades.</li><li><strong>pass@k vs pass^k</strong>: pass@k is “at least one of k tries succeeds” (capability). pass^k is “all k tries succeed” (reliability). Benchmarks usually report the first; products live or die on the second.</li><li><strong>Benchmark contamination</strong>: test questions leaking into training data, which inflates scores. One reason to trust your own evals over leaderboards.</li><li><strong>Sycophancy</strong>: the tendency to agree with the user or tell them what they want to hear.</li><li><strong>Jagged frontier</strong>: models can be superhuman at one task and fail a nearby, easier one. Never extrapolate capability from a demo.</li></ul><div class=\"pm\"><p class=\"eyebrow\">What changes for you</p><ul><li>Your acceptance criteria are an eval. Write them as a dataset and a pass threshold, not prose (Chapter 5).</li><li>Ask for pass^k on the critical path. A feature that works 4 times in 5 feels broken to users.</li><li>Read real outputs every week. Error analysis is the PM’s highest-leverage habit in AI products.</li></ul></div>"
+  }
+ ],
+ "quiz": [
+  {
+   "q": "A support bot’s cost per conversation has tripled since launch, with no change in traffic or prompts. What is the most likely cause?",
+   "o": [
+    "The provider raised prices",
+    "Conversations got longer, and each turn re-sends the growing history",
+    "Temperature was set too high",
+    "The embedding model changed"
+   ],
+   "a": 1,
+   "w": "Models are stateless, so each turn re-sends history. Longer sessions grow cost much faster than message count. Caching and compaction are the fixes."
+  },
+  {
+   "q": "Engineering proposes fine-tuning so the model “knows” this quarter’s pricing. What’s the main problem?",
+   "o": [
+    "Fine-tuning can’t change model behaviour",
+    "Facts in weights go stale and can’t be cited; pricing belongs in context or behind a tool",
+    "Fine-tuning always costs more than pretraining",
+    "Pricing data is too small to fine-tune on"
+   ],
+   "a": 1,
+   "w": "Fine-tuning is for behaviour. Changing facts belong where they can be updated and cited: retrieval, context or a tool."
+  },
+  {
+   "q": "Each step of a 20-step agent workflow succeeds 95% of the time. Roughly how often does the whole workflow succeed?",
+   "o": [
+    "95%",
+    "81%",
+    "36%",
+    "5%"
+   ],
+   "a": 2,
+   "w": "0.95²⁰ ≈ 0.36. Long chains need much higher per-step reliability, checkpoints or human approvals."
+  },
+  {
+   "q": "Your critical-path feature passes 9 of 10 eval cases on a single run. Which number should you also ask for?",
+   "o": [
+    "pass@10",
+    "pass^k: whether the same cases pass on every one of several runs",
+    "Benchmark rank",
+    "Tokens per second"
+   ],
+   "a": 1,
+   "w": "Outputs are samples. pass^k measures consistency, which is what users experience."
+  },
+  {
+   "q": "Where should a long, unchanging system prompt and tool list go to cut cost?",
+   "o": [
+    "At the end of the prompt",
+    "At the start, as a stable prefix that prompt caching can reuse",
+    "In the model’s weights",
+    "In a separate request"
+   ],
+   "a": 1,
+   "w": "Caching reuses an unchanged prefix at a large discount. Put stable material first and variable material last."
+  },
+  {
+   "q": "A team sets temperature to 0 and writes tests expecting identical output every run. What should you tell them?",
+   "o": [
+    "That’s correct",
+    "Determinism isn’t guaranteed even at temperature 0; test with rates, schemas and rubrics",
+    "Use temperature 1 instead",
+    "Disable streaming to make output deterministic"
+   ],
+   "a": 1,
+   "w": "Batching and hardware variation mean outputs can differ. Assert on structure and graded quality, not exact strings."
+  },
+  {
+   "q": "Which pairing is right?",
+   "o": [
+    "MCP connects agents to each other; A2A connects agents to tools",
+    "MCP connects agents to tools and data; A2A connects agents to other agents",
+    "Both are model training methods",
+    "MCP is a benchmark; A2A is a pricing model"
+   ],
+   "a": 1,
+   "w": "They’re complementary layers, and a serious agent deployment often uses both."
+  },
+  {
+   "q": "A reasoning model gives better answers but blows the latency budget on a simple classification task. What’s the best first move?",
+   "o": [
+    "Fine-tune the reasoning model",
+    "Route this task to a small, non-reasoning tier, or lower the thinking budget, and check the eval",
+    "Increase max tokens",
+    "Remove the system prompt"
+   ],
+   "a": 1,
+   "w": "Test-time compute buys accuracy on hard multi-step problems. Simple tasks rarely need it. Route per task and let the eval decide."
+  }
+ ],
+ "glossary": [
+  {
+   "term": "A2A (Agent2Agent)",
+   "def": "Protocol for agents to discover and call other agents across vendors.",
+   "area": "Agents"
+  },
+  {
+   "term": "Agent",
+   "def": "A model in a loop that chooses actions, observes results and repeats until done or stopped.",
+   "area": "Agents"
+  },
+  {
+   "term": "Autonomy level",
+   "def": "How much an AI feature may do without a person: suggest, draft, act with approval, act.",
+   "area": "Agents"
+  },
+  {
+   "term": "Batch API",
+   "def": "Discounted, asynchronous processing for work that can wait hours.",
+   "area": "Cost"
+  },
+  {
+   "term": "Benchmark contamination",
+   "def": "Test data leaking into training data, inflating scores.",
+   "area": "Quality"
+  },
+  {
+   "term": "Citation",
+   "def": "A pointer from an answer to the source passage supporting it.",
+   "area": "Quality"
+  },
+  {
+   "term": "Computer use",
+   "def": "A model operating a screen, keyboard and browser directly.",
+   "area": "Agents"
+  },
+  {
+   "term": "Context engineering",
+   "def": "Designing everything the model sees per call: instructions, examples, retrieved data, tools, history.",
+   "area": "Context"
+  },
+  {
+   "term": "Context rot",
+   "def": "Quality loss as context grows long or noisy, well before the window limit.",
+   "area": "Context"
+  },
+  {
+   "term": "Context window",
+   "def": "The maximum tokens a model can consider in one call, input and output combined.",
+   "area": "Context"
+  },
+  {
+   "term": "Distillation",
+   "def": "Training a smaller model to imitate a larger one.",
+   "area": "Models"
+  },
+  {
+   "term": "Embedding",
+   "def": "A vector representing meaning, used for search and similarity.",
+   "area": "Models"
+  },
+  {
+   "term": "Eval",
+   "def": "A systematic test of model behaviour against a dataset and grading method.",
+   "area": "Quality"
+  },
+  {
+   "term": "Fine-tuning",
+   "def": "Further training a model’s weights on your examples to change behaviour.",
+   "area": "Models"
+  },
+  {
+   "term": "Golden set",
+   "def": "A curated eval dataset of representative and edge-case inputs with expected results.",
+   "area": "Quality"
+  },
+  {
+   "term": "Grounding",
+   "def": "Constraining answers to supplied sources.",
+   "area": "Quality"
+  },
+  {
+   "term": "Hallucination",
+   "def": "Fluent, confident output not supported by facts or sources.",
+   "area": "Quality"
+  },
+  {
+   "term": "Harness",
+   "def": "The code around a model that runs the agent loop, manages context and enforces limits.",
+   "area": "Agents"
+  },
+  {
+   "term": "Human in the loop",
+   "def": "A person approves, edits or can interrupt at defined points.",
+   "area": "Agents"
+  },
+  {
+   "term": "Inference",
+   "def": "Running a trained model to produce output.",
+   "area": "Models"
+  },
+  {
+   "term": "Jagged frontier",
+   "def": "Uneven capability: superhuman at some tasks, failing at nearby easier ones.",
+   "area": "Quality"
+  },
+  {
+   "term": "Knowledge cutoff",
+   "def": "The date a model’s training data ends.",
+   "area": "Models"
+  },
+  {
+   "term": "LLM-as-judge",
+   "def": "Using a model to grade outputs against a rubric; needs calibration against humans.",
+   "area": "Quality"
+  },
+  {
+   "term": "LoRA",
+   "def": "A cheap fine-tuning method that trains small adapter weights instead of the whole model.",
+   "area": "Models"
+  },
+  {
+   "term": "MCP (Model Context Protocol)",
+   "def": "Open standard for connecting models to tools and data via servers.",
+   "area": "Agents"
+  },
+  {
+   "term": "Mixture-of-experts",
+   "def": "Architecture that activates only part of the model per token.",
+   "area": "Models"
+  },
+  {
+   "term": "Open-weight model",
+   "def": "A model whose weights are published, so you can host and modify it.",
+   "area": "Models"
+  },
+  {
+   "term": "pass@k",
+   "def": "Probability at least one of k attempts succeeds: a measure of capability.",
+   "area": "Quality"
+  },
+  {
+   "term": "pass^k",
+   "def": "Probability all k attempts succeed: a measure of reliability.",
+   "area": "Quality"
+  },
+  {
+   "term": "Prompt caching",
+   "def": "Reusing an unchanged prompt prefix across calls at a discount.",
+   "area": "Cost"
+  },
+  {
+   "term": "Prompt injection",
+   "def": "Untrusted content containing instructions that hijack the model.",
+   "area": "Agents"
+  },
+  {
+   "term": "Quantization",
+   "def": "Storing weights at lower precision to run cheaper and faster.",
+   "area": "Models"
+  },
+  {
+   "term": "RAG",
+   "def": "Retrieval-augmented generation: fetching relevant documents into context at request time.",
+   "area": "Context"
+  },
+  {
+   "term": "Rate limit",
+   "def": "Cap on requests or tokens per minute for an account.",
+   "area": "Cost"
+  },
+  {
+   "term": "Reasoning model",
+   "def": "A model that generates thinking tokens before answering, trading cost and latency for accuracy.",
+   "area": "Models"
+  },
+  {
+   "term": "RL fine-tuning",
+   "def": "Fine-tuning that rewards outputs passing an automated grader.",
+   "area": "Models"
+  },
+  {
+   "term": "Skill",
+   "def": "A package of instructions and files an agent loads only when a task needs it.",
+   "area": "Agents"
+  },
+  {
+   "term": "Structured output",
+   "def": "Generation constrained to a schema such as JSON.",
+   "area": "Models"
+  },
+  {
+   "term": "Subagent",
+   "def": "A separate model instance given a focused sub-task and its own context.",
+   "area": "Agents"
+  },
+  {
+   "term": "Sycophancy",
+   "def": "Tendency to agree with or flatter the user.",
+   "area": "Quality"
+  },
+  {
+   "term": "Temperature",
+   "def": "Sampling setting: lower is more predictable, higher is more varied.",
+   "area": "Models"
+  },
+  {
+   "term": "Test-time compute",
+   "def": "Spending more computation at inference, such as thinking, to improve answers.",
+   "area": "Models"
+  },
+  {
+   "term": "Thinking tokens",
+   "def": "Tokens a reasoning model generates before its answer, billed as output.",
+   "area": "Cost"
+  },
+  {
+   "term": "Token",
+   "def": "The unit a model reads and writes: roughly ¾ of an English word.",
+   "area": "Cost"
+  },
+  {
+   "term": "Tool use",
+   "def": "A model requesting an action that the application executes and returns.",
+   "area": "Agents"
+  },
+  {
+   "term": "TTFT",
+   "def": "Time to first token: the delay before output begins.",
+   "area": "Cost"
+  }
+ ]
+}
