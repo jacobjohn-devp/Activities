@@ -1,9 +1,9 @@
-# Writing brief: AI Product Management course, chapters 2–14
+# Writing brief for course chapters
 
 ## The course
 "AI Product Management" is an internal course that takes experienced product managers to AI product management. The readers are already technical: they've shipped complex software, read API docs, and work closely with engineers. They want depth, accuracy and judgement that puts them in the top 1% of AI PMs. Don't explain basic software concepts. Do explain AI concepts precisely, with the trade-offs and the product consequences.
 
-Today is 16 October 2026. Chapter 1 is finished. Read it before you write anything: it's in `../src/index.template.html` (the `LESSONS`, `QUIZ` and `GLOSS` arrays, and the `labHTML` function). Match its depth, tone, structure and HTML conventions exactly.
+Today's date matters: mark perishable facts "as of <month year>". Read it before you write anything: it's in `courses/ai-product-management/ch1.json` (and any finished chapter is a good model). Match its depth, tone, structure and HTML conventions exactly.
 
 ## Voice
 - Plain, direct, specific. Short sentences. Active voice. Write the way a sharp senior PM or staff engineer would talk to a peer.
@@ -20,7 +20,7 @@ Today is 16 October 2026. Chapter 1 is finished. Read it before you write anythi
 - Illustrative numbers must be labelled as illustrative.
 
 ## Output format
-Write one JSON file per chapter: `chapters/ch<N>.json` (for example `ch2.json`). Validate each with `python3 -I -c "import json,sys; json.load(open(sys.argv[1]))" ch2.json`.
+Write one JSON file per chapter: `courses/<course>/ch<N>.json` (for example `ch2.json`). Validate each with `python3 -I -c "import json,sys; json.load(open(sys.argv[1]))" ch2.json`.
 
 ```json
 {
@@ -55,6 +55,6 @@ Only these (they're already styled): `<p>`, `<strong>`, `<em>`, `<code>`, `<sup>
 - Reading: 3–5 primary or highly reputable sources you actually opened and checked. Real URLs only.
 
 ### Cross-references
-Refer to other chapters by number and name where useful ("Chapter 5, Evals are the spec"). The full outline is in `../src/index.template.html` in the `CH` array.
+Refer to other chapters by number and name where useful ("Chapter 5, Evals are the spec"). The course outline is in its `course.json`.
 
 When finished, reply with: the files written, a one-line summary per lesson, and any claims you deliberately left out because you couldn't verify them.

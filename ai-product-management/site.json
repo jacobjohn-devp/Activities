@@ -1,4 +1,0 @@
-{
-  "url": null,
-  "_comment": "Set url to the site address, e.g. https://learn.example.com (no trailing slash). The SITE_URL environment variable overrides it."
-}

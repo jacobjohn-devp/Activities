@@ -1,6 +1,24 @@
 {
+ "slug": "ai-product-management",
  "title": "AI Product Management",
  "tagline": "A 14-chapter course that takes experienced product managers to AI product management.",
+ "summary": "Precise mental models, hands-on labs and work artefacts for PMs leading AI products: LLMs, evals, agents, AI coding, pricing, security and strategy.",
+ "lede": "Fourteen chapters for product managers who already ship complex software and now need to lead AI products with the same rigour: precise mental models, hands-on labs, and something you can use at work by the end of every chapter.",
+ "card": "From PM to AI PM",
+ "hue": "lime",
+ "shape": "disc",
+ "tags": [
+  "AI",
+  "Product management"
+ ],
+ "audience": "Product managers",
+ "level": "Advanced",
+ "updated": "2026-10-16",
+ "status": "published",
+ "features": [
+  "vocabulary-lab"
+ ],
+ "storageKey": "il-aipm-progress-v1",
  "parts": [
   {
    "n": "I",

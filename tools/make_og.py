@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Make the 1200x630 social share images in static/og/ from chapters/course.json.
+"""Make the 1200x630 social share images: one per course page (courses/<slug>/og/) and the library's (static/og/library.png).
 
 Needs Pillow, which the site build does not, so run it by hand when a chapter
 title, part or shape changes, and commit the PNGs:
 
   python3 -m pip install pillow
-  python3 tools/make_og.py [--font-dir /path/to/fonts]
+  python3 tools/make_og.py [slug ...] [--font-dir /path/to/fonts]
 
 The art follows the poster openers: one hue shape bleeding off the right
 edge, an oversized numeral knocked out where the shape crosses it, and a
@@ -17,11 +17,10 @@ import os
 
 from PIL import Image, ImageChops, ImageDraw, ImageFont
 
-HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(HERE, 'static', 'og')
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # repo root
 W, H = 1200, 630
 SURFACE, INK, CARD, WHITE = (235, 235, 235), (17, 17, 17), (17, 17, 17), (255, 255, 255)
-HUES = {'lime': (155, 203, 26), 'sky': (36, 180, 230), 'orange': (246, 168, 0), 'pink': (233, 138, 160)}
+HUES = {'lime': (155, 203, 26), 'sky': (36, 180, 230), 'orange': (246, 168, 0), 'pink': (233, 138, 160), 'yellow': (244, 180, 0), 'blue': (63, 143, 218)}
 FONT_CANDIDATES = {
     'bold': ['InterTight-ExtraBold.ttf', 'Inter-Bold.ttf', '/System/Library/Fonts/Supplemental/Arial Bold.ttf', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'],
     'black': ['InterTight-ExtraBold.ttf', '/System/Library/Fonts/Supplemental/Arial Black.ttf', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'],
@@ -115,16 +114,25 @@ def poster(title, sub, eyebrow, hue, kind, numeral, font_dir):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument('slugs', nargs='*', help='courses to draw (default: all)')
     ap.add_argument('--font-dir', help='folder holding InterTight-ExtraBold.ttf and JetBrainsMono-SemiBold.ttf, if you have them')
     args = ap.parse_args()
-    course = json.load(open(os.path.join(HERE, 'chapters', 'course.json'), encoding='utf-8'))
-    os.makedirs(OUT, exist_ok=True)
-    poster(course['title'], '14 chapters · labs · quizzes', 'Course', HUES['lime'], 'disc', '', args.font_dir).save(os.path.join(OUT, 'home.png'), optimize=True)
-    for c in course['chapters']:
-        part = course['parts'][c['part']]
-        img = poster(c['title'], c['sub'], 'Part ' + part['n'], HUES[part['hue']], c['shape'], '%02d' % c['id'], args.font_dir)
-        img.save(os.path.join(OUT, c['slug'] + '.png'), optimize=True)
-    print('wrote', len(course['chapters']) + 1, 'images to static/og/')
+    root = os.path.join(HERE, 'courses')
+    slugs = args.slugs or sorted(d for d in os.listdir(root) if os.path.isfile(os.path.join(root, d, 'course.json')))
+    lib = os.path.join(HERE, 'static', 'og')
+    os.makedirs(lib, exist_ok=True)
+    poster('Internal Learning', 'Courses for product teams', 'Library', HUES['sky'], 'pill', '', args.font_dir).save(os.path.join(lib, 'library.png'), optimize=True)
+    for slug in slugs:
+        course = json.load(open(os.path.join(root, slug, 'course.json'), encoding='utf-8'))
+        out = os.path.join(root, slug, 'og')
+        os.makedirs(out, exist_ok=True)
+        n = len(course['chapters'])
+        poster(course['title'], f'{n} chapter{"s" if n != 1 else ""} · Course', 'Course', HUES[course.get('hue', 'lime')], course.get('shape', 'disc'), '', args.font_dir).save(os.path.join(out, 'home.png'), optimize=True)
+        for c in course['chapters']:
+            part = course['parts'][c['part']]
+            poster(c['title'], c['sub'], 'Part ' + part['n'], HUES[part['hue']], c['shape'], '%02d' % c['id'], args.font_dir).save(os.path.join(out, c['slug'] + '.png'), optimize=True)
+        print(f'{slug}: {n + 1} images')
+    print('library: static/og/library.png')
 
 
 if __name__ == '__main__':

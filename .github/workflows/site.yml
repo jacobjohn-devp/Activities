@@ -1,0 +1,44 @@
+name: Site
+
+# Validates and builds the library and every course on each pull request and
+# push to main. Cloudflare deploys main; this check stops broken content first.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate content
+        run: python3 build.py --check
+      - name: Build site
+        run: python3 build.py
+      - name: Check the page scripts parse
+        run: for f in dist/assets/*.js; do node --check "$f"; done
+      - name: Check every page and LLM file was written
+        run: |
+          test -f dist/index.html && test -f dist/llms.txt && test -f dist/llms-full.txt && test -f dist/404.html
+          python3 - <<'PY'
+          import json, glob, os, sys
+          missing = []
+          for f in glob.glob('courses/*/course.json'):
+              c = json.load(open(f))
+              for path in [f"dist/{c['slug']}/index.html", f"dist/{c['slug']}/llms.txt"] + [f"dist/{c['slug']}/ch/{ch['slug']}/index.html" for ch in c['chapters']]:
+                  if not os.path.exists(path):
+                      missing.append(path)
+          sys.exit('missing: ' + ', '.join(missing) if missing else 0)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: dist
+          retention-days: 14

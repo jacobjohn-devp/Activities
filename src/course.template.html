@@ -405,8 +405,8 @@ html { scroll-behavior: smooth; }
 
 <div class="wrap">
   <header class="bar">
-    <a class="mark" href="#home" data-route="home">Learning · AI Product Management</a>
-    <nav aria-label="Course"><a href="#home" data-route="home">All chapters</a><a href="#ch1" data-route="ch1">Start chapter 1</a><button type="button" class="theme-btn" id="hoppy-btn" aria-pressed="false" title="Show or hide Hoppy, the course buddy">Hoppy: off</button><button type="button" class="theme-btn" id="theme-btn">Theme: system</button></nav>
+    <a class="mark" href="#home" data-route="home" id="course-mark">Learning · AI Product Management</a>
+    <nav aria-label="Course"><a href="/" id="library-link" hidden>All courses</a><a href="#home" data-route="home">All chapters</a><a href="#ch1" data-route="ch1">Start chapter 1</a><button type="button" class="theme-btn" id="hoppy-btn" aria-pressed="false" title="Show or hide Hoppy, the course buddy">Hoppy: off</button><button type="button" class="theme-btn" id="theme-btn">Theme: system</button></nav>
   </header>
   <main id="app"></main>
 </div>
@@ -448,11 +448,12 @@ var PARTS = COURSE.parts, CH = COURSE.chapters;
 /* Routes: on the published site each chapter has a real URL (/ch/<slug>/); inside a Claude artifact routes stay in the hash */
 var SITE = !!window.__SITE, BYSLUG = {};
 CH.forEach(function (c) { BYSLUG[c.slug] = c.id; });
-function pathFor(r) { var m = /^ch(\d+)$/.exec(r); return m ? '/ch/' + CH[+m[1] - 1].slug + '/' : '/'; }
+var BASE = '/' + COURSE.slug + '/';
+function pathFor(r) { var m = /^ch(\d+)$/.exec(r); return m ? BASE + 'ch/' + CH[+m[1] - 1].slug + '/' : BASE; }
 function currentRoute() {
   var h = (location.hash || '').replace('#', '');
   if (/^ch\d+$/.test(h) || h === 'home') return h;
-  if (SITE) { var m = /^\/ch\/([^\/]+)\/?$/.exec(location.pathname); if (m && BYSLUG[m[1]]) return 'ch' + BYSLUG[m[1]]; }
+  if (SITE && location.pathname.indexOf(BASE + 'ch/') === 0) { var sl = location.pathname.slice(BASE.length + 3).replace(/\/$/, ''); if (BYSLUG[sl]) return 'ch' + BYSLUG[sl]; }
   return 'home';
 }
 function setLink(a, r) { a.setAttribute('href', SITE ? pathFor(r) : '#' + r); a.dataset.route = r; }
@@ -467,9 +468,15 @@ function navigate(r) {
 
 /* ---------- storage (per-viewer convenience only) ---------- */
 var CHDATA = COURSE.data;
-function isLive(c) { return c.id === 1 || !!CHDATA[c.id]; }
+/* Course-specific extras: the AI PM course's chapter 1 has explainers, a cost lab and a glossary */
+var SPECIAL = (COURSE.features || []).indexOf('vocabulary-lab') >= 0;
+(function () {
+  var mark = document.getElementById('course-mark'); if (mark) mark.textContent = 'Learning · ' + COURSE.title;
+  var lib = document.getElementById('library-link'); if (lib && window.__SITE) lib.hidden = false;
+})();
+function isLive(c) { return !!CHDATA[c.id]; }
 CH.forEach(function (c) { var d = CHDATA[c.id]; if (d) c.sub = c.sub.replace(/\d+ lessons/, d.lessons.length + ' lessons'); });
-var KEY = 'il-aipm-progress-v1', done = {};
+var KEY = COURSE.storageKey || ('il-progress-' + COURSE.slug), done = {};
 try { done = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { done = {}; }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(done)); } catch (e) {} }
 
@@ -486,7 +493,7 @@ function shapeSVG(kind) {
   else k = '<circle class="shape" cx="210" cy="50" r="120"/>';
   return '<svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' + k + '</svg>';
 }
-function lessonCount(c) { return c.id === 1 ? LESSONS.length : CHDATA[c.id] ? CHDATA[c.id].lessons.length : c.lessons.length; }
+function lessonCount(c) { return c.id === 1 && SPECIAL ? LESSONS.length : CHDATA[c.id] ? CHDATA[c.id].lessons.length : c.lessons.length; }
 function doneCount(c) { var n = 0; for (var i = 0; i < lessonCount(c); i++) if (done[c.id + '.' + (i + 1)]) n++; return n; }
 function progressHTML(c) {
   var t = lessonCount(c), d = doneCount(c), p = Math.round(100 * d / t);
@@ -496,14 +503,16 @@ function progressHTML(c) {
 /* ---------- home ---------- */
 function home() {
   var h = '';
-  h += '<section class="hero hue-lime"><div><p class="eyebrow">Internal Learning · course</p><h1>AI Product Management</h1>' +
-    '<p class="lede">Fourteen chapters for product managers who already ship complex software and now need to lead AI products with the same rigour: precise mental models, hands-on labs, and something you can use at work by the end of every chapter.</p>' +
-    '<div class="facts"><span class="tag">14 chapters</span><span class="tag">4 parts</span><span class="tag line">A lab per chapter</span><span class="tag line">Updated October 2026</span></div>' +
-    '<div class="facts"><a class="btn" href="#ch1">Start chapter 1</a><a class="btn secondary" href="#part-1">See the outline</a></div></div>' +
+  var upd = COURSE.updated ? new Date(COURSE.updated + 'T00:00:00Z').toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }) : '';
+  h += '<section class="hero hue-' + (COURSE.hue || 'lime') + '"><div><p class="eyebrow">Internal Learning · course</p><h1>' + esc(COURSE.title) + '</h1>' +
+    '<p class="lede">' + esc(COURSE.lede || COURSE.tagline) + '</p>' +
+    '<div class="facts"><span class="tag">' + CH.length + ' chapter' + (CH.length === 1 ? '' : 's') + '</span>' + (PARTS.length > 1 ? '<span class="tag">' + PARTS.length + ' parts</span>' : '') +
+    (CH.every(function (c) { return CHDATA[c.id] && (CHDATA[c.id].lab || (c.id === 1 && SPECIAL)); }) ? '<span class="tag line">A lab per chapter</span>' : '') + (upd ? '<span class="tag line">Updated ' + upd + '</span>' : '') + '</div>' +
+    '<div class="facts"><a class="btn" href="#ch1">Start chapter 1</a>' + (PARTS.length > 1 ? '<a class="btn secondary" href="#part-1">See the outline</a>' : '') + '</div></div>' +
     '<div class="hero-art" aria-hidden="true"><svg viewBox="0 0 520 340" preserveAspectRatio="xMidYMid slice">' +
     '<circle class="shape" cx="330" cy="80" r="190" style="fill:var(--lime)"/><rect x="380" y="200" width="160" height="80" rx="40" style="fill:var(--sky)"/>' +
     '<circle cx="470" cy="80" r="40" style="fill:none;stroke:var(--pink);stroke-width:20px"/><circle cx="300" cy="320" r="60" style="fill:var(--orange)"/></svg>' +
-    '<div class="tcard"><span class="tmark">Learning</span><div class="tname">From PM to AI PM</div><div class="tsub">Course · ' + CH.reduce(function (n, c) { return n + lessonCount(c); }, 0) + ' lessons</div></div></div></section>';
+    '<div class="tcard"><span class="tmark">Learning</span><div class="tname">' + esc(COURSE.card || COURSE.title) + '</div><div class="tsub">Course · ' + CH.reduce(function (n, c) { return n + lessonCount(c); }, 0) + ' lessons</div></div></div></section>';
   h += '<section class="how" aria-label="How each chapter works">' +
     '<div><h3>A core question</h3><p>Each chapter opens with the question you’ll be able to answer by the end. If you can already answer it, skim.</p></div>' +
     '<div><h3>Lessons with PM implications</h3><p>Short, technical explanations, each ending with what changes in your specs, roadmap or reviews.</p></div>' +
@@ -524,11 +533,11 @@ function home() {
 }
 
 /* ---------- chapter 1 content ---------- */
-var LESSONS = CHDATA[1].lessons;
+var LESSONS = SPECIAL ? CHDATA[1].lessons : [];
 
-var QUIZ = CHDATA[1].quiz;
+var QUIZ = SPECIAL ? CHDATA[1].quiz : [];
 
-var GLOSS = CHDATA[1].glossary.map(function (g) { return [g.term, g.def, g.area]; });
+var GLOSS = (SPECIAL ? CHDATA[1].glossary : []).map(function (g) { return [g.term, g.def, g.area]; });
 
 /* ---------- explainers: interactive diagrams inside lessons (keyed by lesson index) ---------- */
 var XP = {
@@ -670,7 +679,7 @@ function lessonsHTML(c, lessons, xp) {
 }
 function pagerHTML(c) {
   var prev = c.id > 1 ? '<a class="btn secondary" href="#ch' + (c.id - 1) + '">Previous: ' + esc(CH[c.id - 2].title) + '</a>' : '<a class="btn secondary" href="#home">All chapters</a>';
-  var next = c.id < 14 ? '<a class="btn" href="#ch' + (c.id + 1) + '">Next: ' + esc(CH[c.id].title) + '</a>' : '<a class="btn" href="#home">All chapters</a>';
+  var next = c.id < CH.length ? '<a class="btn" href="#ch' + (c.id + 1) + '">Next: ' + esc(CH[c.id].title) + '</a>' : '<a class="btn" href="#home">All chapters</a>';
   return '<nav class="pager" aria-label="Chapters">' + prev + next + '</nav>';
 }
 function chapter1() {
@@ -688,19 +697,22 @@ function chapter1() {
 }
 function chapterPage(c, d) {
   var mins = d.lessons.reduce(function (n, l) { return n + l.html.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length; }, 0) / 220;
-  var hrs = Math.max(1, Math.round((mins + 75) / 30) / 2);
-  var h = heroHTML(c, '<span class="tag hue">' + esc(c.shelf) + '</span><span class="tag line">About ' + hrs + ' hour' + (hrs === 1 ? '' : 's') + '</span><span class="tag line">' + d.lessons.length + ' lessons · lab · quiz</span>', '');
-  h += '<div class="layout">' + tocHTML(c, d.lessons, [['lab', 'Lab: ' + d.lab.title], ['quiz', 'Check yourself'], ['deliverable', 'Deliverable']]) + '<div class="content">';
+  var hasQuiz = d.quiz && d.quiz.length, L = d.lab;
+  var hrs = Math.max(0.5, Math.round((mins + (L ? 60 : 0) + (hasQuiz ? 15 : 0)) / 30) / 2);
+  var bits = [d.lessons.length + ' lesson' + (d.lessons.length === 1 ? '' : 's')].concat(L ? ['lab'] : [], hasQuiz ? ['quiz'] : []);
+  var h = heroHTML(c, '<span class="tag hue">' + esc(c.shelf) + '</span><span class="tag line">About ' + (hrs < 1 ? '30 minutes' : hrs + ' hour' + (hrs === 1 ? '' : 's')) + '</span><span class="tag line">' + bits.join(' · ') + '</span>', '');
+  var extras = [].concat(L ? [['lab', 'Lab: ' + L.title]] : [], hasQuiz ? [['quiz', 'Check yourself']] : [], d.deliverable ? [['deliverable', 'Deliverable']] : []);
+  h += '<div class="layout">' + tocHTML(c, d.lessons, extras) + '<div class="content">';
   h += lessonsHTML(c, d.lessons, null);
-  var L = d.lab;
-  h += '<section class="lesson" id="lab"><span class="num">Lab · ' + esc(L.time || '') + '</span><h2>' + esc(L.title) + '</h2>' + (L.intro || '') +
+  if (L) h += '<section class="lesson" id="lab"><span class="num">Lab · ' + esc(L.time || '') + '</span><h2>' + esc(L.title) + '</h2>' + (L.intro || '') +
     '<div class="lab"><ol class="labsteps">' + L.steps.map(function (st, i) {
       var k = 'lab-' + c.id + '-' + i;
       return '<li><label class="check labstep"><input type="checkbox" id="' + k + '" data-lab="' + k + '"' + (done[k] ? ' checked' : '') + '><span>' + st + '</span></label></li>';
     }).join('') + '</ol>' + (L.template ? '<h3>Worksheet</h3>' + L.template : '') + (L.done ? '<div class="callout"><p class="eyebrow">What good looks like</p>' + L.done + '</div>' : '') + '</div></section>';
-  h += quizHTML(d.quiz, 'Apply it');
-  h += '<section class="lesson" id="deliverable"><span class="num">Deliverable</span><h2>' + esc(d.deliverable.title) + '</h2>' + d.deliverable.html +
-    (d.reading && d.reading.length ? '<p class="sources" style="margin-top:24px">Further reading: ' + d.reading.map(function (r) { return '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(r.label) + '</a>'; }).join(' · ') + '</p>' : '') + '</section>';
+  if (hasQuiz) h += quizHTML(d.quiz, 'Apply it');
+  var reading = d.reading && d.reading.length ? '<p class="sources" style="margin-top:24px">Further reading: ' + d.reading.map(function (r) { return '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(r.label) + '</a>'; }).join(' · ') + '</p>' : '';
+  if (d.deliverable) h += '<section class="lesson" id="deliverable"><span class="num">Deliverable</span><h2>' + esc(d.deliverable.title) + '</h2>' + d.deliverable.html + reading + '</section>';
+  else if (reading) h += '<section class="lesson">' + reading + '</section>';
   return h + pagerHTML(c) + '</div></div>';
 }
 
@@ -723,7 +735,7 @@ function heroHTML(c, facts, intro) {
   return '<section class="poster" aria-label="Chapter ' + c.id + '"><div class="poster-art" aria-hidden="true"><svg viewBox="0 0 1440 540" preserveAspectRatio="xMaxYMid slice"><defs>' + s.clip + '</defs>' +
       s.g + num + '<g clip-path="url(#pclip' + c.id + ')"><text class="pnum knock" x="1410" y="512" text-anchor="end">' + n + '</text></g></svg></div>' +
     '<div class="tcard"><span class="tnum">Part ' + p.n + '</span><span class="tmark">Learning</span><h1 class="tname">' + esc(c.title) + '</h1><div class="tsub">' + esc(c.sub) + '</div></div></section>' +
-    '<div class="poster-foot"><div><p class="eyebrow">Part ' + p.n + ' · ' + esc(p.title) + ' · Chapter ' + c.id + ' of 14</p><p class="q">' + esc(c.q) + '</p></div><div class="facts">' + facts + '</div>' +
+    '<div class="poster-foot"><div><p class="eyebrow">Part ' + p.n + ' · ' + esc(p.title) + ' · Chapter ' + c.id + ' of ' + CH.length + '</p><p class="q">' + esc(c.q) + '</p></div><div class="facts">' + facts + '</div>' +
     (intro ? '<p class="intro">' + intro + '</p>' : '') + '</div>';
 }
 
@@ -813,7 +825,7 @@ function planned(c) {
   h += '<div class="plan-grid"><div class="plan-box"><h2>Lessons</h2><ol>' + c.lessons.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ol></div>' +
     '<div style="display:grid;gap:24px"><div class="plan-box"><h2>Lab</h2><p>' + esc(c.lab) + '</p></div><div class="plan-box"><h2>Deliverable</h2><p>' + esc(c.out) + '</p></div></div></div>';
   var prev = c.id > 1 ? '<a class="btn secondary" href="#ch' + (c.id - 1) + '">Previous: ' + esc(CH[c.id - 2].title) + '</a>' : '';
-  var next = c.id < 14 ? '<a class="btn" href="#ch' + (c.id + 1) + '">Next: ' + esc(CH[c.id].title) + '</a>' : '<a class="btn" href="#home">All chapters</a>';
+  var next = c.id < CH.length ? '<a class="btn" href="#ch' + (c.id + 1) + '">Next: ' + esc(CH[c.id].title) + '</a>' : '<a class="btn" href="#home">All chapters</a>';
   return h + '<nav class="pager" aria-label="Chapters">' + (prev || '<a class="btn secondary" href="#home">All chapters</a>') + next + '</nav>';
 }
 
@@ -898,16 +910,16 @@ var Hop = (function () {
   }
   function hint() {
     var m = /^ch(\d+)$/.exec(currentRoute()), id = m ? +m[1] : 0;
-    if (!id) return { t: 'Not sure where to start? Chapter 1 builds the vocabulary everything else uses, in about two hours.', go: 'Start chapter 1', href: '#ch1' };
+    if (!id) return SPECIAL ? { t: 'Not sure where to start? Chapter 1 builds the vocabulary everything else uses, in about two hours.', go: 'Start chapter 1', href: '#ch1' } : { t: 'Not sure where to start? Chapter 1 sets up everything after it.', go: 'Start chapter 1', href: '#ch1' };
     if (id > 1 && !CHDATA[id]) return { t: 'Chapter ' + id + ' is still an outline. Chapter 1 is ready to work through now.', go: 'Open chapter 1', href: '#ch1' };
     var secs = ['lab', 'quiz', 'glossary', 'deliverable'].map(function (s) { return document.getElementById(s); }), here = null;
     document.querySelectorAll('.content > section').forEach(function (s) { var r = s.getBoundingClientRect(); if (r.top < innerHeight * 0.5) here = s; });
     var sid = here ? here.id : 'l1';
-    if (sid === 'lab') return id === 1 ? { t: 'Try setting thinking tokens to 0, then cached share to 90%. Watch which bar shrinks.', go: 'Got it', href: '' } : { t: 'Labs work best on a real feature from your own backlog. Tick each step as you go; your ticks are saved.', go: 'Got it', href: '' };
+    if (sid === 'lab') return id === 1 && SPECIAL ? { t: 'Try setting thinking tokens to 0, then cached share to 90%. Watch which bar shrinks.', go: 'Got it', href: '' } : { t: 'Labs work best on a real feature from your own backlog. Tick each step as you go; your ticks are saved.', go: 'Got it', href: '' };
     if (sid === 'quiz') return { t: 'Pick any answer. You see the reasoning either way, and wrong answers teach the most.', go: 'Got it', href: '' };
     if (sid === 'glossary' || sid === 'deliverable') return { t: 'Short on time? The deliverable works best with your engineering lead in the room.', go: 'Back to the top', href: '#ch' + id, jump: 'l1' };
     var name = here ? (here.querySelector('h2') || {}).textContent : '';
-    if (id > 1) return { t: 'Taking a while on “' + name + '”? The “What changes for you” note sums it up, and the quiz checks what stuck.', go: 'Jump to the quiz', href: '#ch' + id, jump: 'quiz' };
+    if (id > 1 || !SPECIAL) return { t: 'Taking a while on “' + name + '”? The “What changes for you” note sums it up, and the quiz checks what stuck.', go: 'Jump to the quiz', href: '#ch' + id, jump: 'quiz' };
     return { t: 'Taking a while on “' + name + '”? Every term is defined in the glossary, and the quiz checks what stuck.', go: 'Open the glossary', href: '#ch1', jump: 'glossary' };
   }
   function help() {
@@ -1006,16 +1018,16 @@ function route() {
   var hsh = (location.hash || '').replace('#', ''), m = /^ch(\d+)$/.exec(currentRoute()), c = m ? CH[+m[1] - 1] : null;
   if (c) {
     document.body.className = 'is-chapter hue-' + hueOf(c);
-    app.innerHTML = c.id === 1 ? chapter1() : CHDATA[c.id] ? chapterPage(c, CHDATA[c.id]) : planned(c);
-    if (SITE) document.title = c.title + ' · AI Product Management';
-    if (c.id === 1) { calc(); renderGloss(); initExplainers(); }
+    app.innerHTML = c.id === 1 && SPECIAL ? chapter1() : CHDATA[c.id] ? chapterPage(c, CHDATA[c.id]) : planned(c);
+    if (SITE) document.title = c.title + ' · ' + COURSE.title;
+    if (c.id === 1 && SPECIAL) { calc(); renderGloss(); initExplainers(); }
     window.scrollTo(0, 0);
     readline.hidden = false; updateReadline();
   } else {
     document.body.className = '';
     readline.hidden = true;
     app.innerHTML = home();
-    if (SITE) document.title = 'AI Product Management · A course for product managers';
+    if (SITE) document.title = COURSE.title + ' · Internal Learning';
     if (/^part-\d$/.test(hsh)) { var el = document.getElementById(hsh); if (el) el.scrollIntoView(); } else window.scrollTo(0, 0);
   }
   linkify();

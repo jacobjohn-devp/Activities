@@ -1,0 +1,10 @@
+{
+  "url": null,
+  "_url": "Set url to the site address, e.g. https://learn.example.com (no trailing slash). The SITE_URL environment variable overrides it.",
+  "order": ["ai-product-management"],
+  "_order": "Course slugs in the order the library shows them. Unlisted courses follow, alphabetically.",
+  "redirects": [
+    { "from": "/ch/*", "to": "/ai-product-management/ch/:splat", "status": 301 }
+  ],
+  "_redirects": "Old addresses from before the library existed, so shared links keep working."
+}

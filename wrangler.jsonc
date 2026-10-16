@@ -1,4 +1,4 @@
-// Cloudflare Workers static assets for the AI Product Management course.
+// Cloudflare Workers static assets for the Internal Learning site (library + courses).
 // Cloudflare runs `python3 build.py` (build command), then `npx wrangler deploy`,
 // which uploads ./dist as static assets. No Worker script is needed.
 {
@@ -17,7 +17,7 @@
   },
   "assets": {
     "directory": "./dist",
-    // /ch/<slug>/ serves /ch/<slug>/index.html; unknown paths get 404.html
+    // /<course>/ch/<slug>/ serves its index.html; unknown paths get 404.html; _redirects keeps old links working
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "404-page"
   }
