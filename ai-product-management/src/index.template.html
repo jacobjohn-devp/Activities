@@ -258,6 +258,14 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
 .toast p { margin: var(--space-1) 0 0; }
 .toast a { color: var(--on-card); }
 
+/* Home: hovering (or keyboard-focusing) one chapter card quietly fades the others in its part */
+.course { transition: opacity .35s ease, filter .35s ease; }
+@media (hover: hover) {
+  .grid:has(.course:hover) .course:not(:hover) { opacity: .4; filter: grayscale(.7); }
+}
+.grid:has(.course:focus-visible) .course:not(:focus-visible) { opacity: .4; filter: grayscale(.7); }
+@media (prefers-reduced-motion: reduce) { .course { transition: none; } }
+
 /* Prerendered page (what crawlers and no-JS readers see before the app takes over) */
 .prerender { max-width: 760px; padding-block: var(--space-6) var(--space-12); }
 .prerender h1 { font-size: 48px; line-height: 50px; margin-top: var(--space-2); }
