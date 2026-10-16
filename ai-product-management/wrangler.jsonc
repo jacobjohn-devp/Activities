@@ -7,6 +7,14 @@
   "compatibility_date": "2025-09-01",
   // Serve on activities.<account>.workers.dev until a custom domain is attached
   "workers_dev": true,
+  // Workers Logs, kept and searchable in the dashboard
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true,
+      "persist": true
+    }
+  },
   "assets": {
     "directory": "./dist",
     // /ch/<slug>/ serves /ch/<slug>/index.html; unknown paths get 404.html
