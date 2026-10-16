@@ -1,0 +1,136 @@
+{
+ "id": 7,
+ "lessons": [
+  {
+   "t": "Long context vs RAG vs agentic search vs fine-tuning",
+   "shelf": "Shifting",
+   "html": "<p>Chapter 1 opened with the four places knowledge can live. This lesson turns that into a decision. The choice sets your freshness guarantee, your permission model, your unit cost and your ability to cite, so make it deliberately and per source. A single product often uses all four.</p><div class=\"tbl\"><table><thead><tr><th>Approach</th><th>Best when</th><th>Breaks when</th><th>Cost shape</th></tr></thead><tbody><tr><td>Long context</td><td>Corpus fits comfortably in the window and is reused across many questions</td><td>Corpus grows, or the answer hides among similar passages</td><td>Input tokens per call; much cheaper with prompt caching</td></tr><tr><td>RAG (index and retrieve)</td><td>Large corpus, many users, sub-second retrieval needed, permissions per document</td><td>The right chunk isn’t retrieved, or the answer spans many chunks</td><td>Indexing pipeline plus a small, steady input cost</td></tr><tr><td>Agentic search</td><td>Questions need several lookups, live systems, or exact matches (code, logs, tickets)</td><td>The agent searches badly or stops early; latency budgets are tight</td><td>Several model turns per question</td></tr><tr><td>Fine-tuning</td><td>Stable behaviour, format or specialist skill at high volume</td><td>Used to store facts that change or must be cited</td><td>Training runs, re-runs on each base model upgrade</td></tr></tbody></table></div><h3>Start with long context when it fits</h3><p>Anthropic’s guidance on retrieval says that if a knowledge base is under about 200,000 tokens (roughly 500 pages), you can often put the whole thing in the prompt and use caching to make it fast and cheap. The case is strong: no pipeline to build, no retrieval misses, and the model sees passages in their full surroundings. Two caveats apply. Quality falls as context grows, and research such as <em>Lost in the Middle</em> (Liu et al.) and Chroma’s 2025 context rot study shows that facts buried in long inputs get missed more often, especially among similar distractors. And you pay for the whole corpus on every uncached call. Measure both on your own questions (this chapter’s lab).</p><h3>Agentic search is the newer default for some domains</h3><p>Instead of a pre-built index, the agent gets search tools (grep, a search API, SQL, a file reader) and decides what to look up, reads results and searches again. Many coding agents work this way over repositories, because exact identifiers and fresh files matter more than semantic similarity. It handles multi-hop questions well and is always current. It costs more turns and more latency, and quality depends on the tools (Chapter 6, lesson 2).</p><h3>Decision rules</h3><ul><li>Facts that change or must be cited never go only into weights.</li><li>Permissions that vary by user push you to RAG or tools that enforce access per call. A shared long-context prompt can’t hide a document from one user.</li><li>Under about 200k tokens and shared by all users: try long context with caching first.</li><li>Large, mostly static and latency-sensitive: RAG.</li><li>Live systems, exact identifiers or multi-step questions: agentic search, often with a RAG index as one of its tools.</li></ul><div class=\"callout\"><p class=\"eyebrow\">A common hybrid</p><p>A support assistant puts the product’s policy handbook in a cached system prompt, retrieves from 40,000 help-centre articles with RAG, and gives the agent a tool to look up the customer’s live account. Each source sits where its freshness and permissions are cheapest to honour.</p></div><div class=\"pm\"><p class=\"eyebrow\">What changes for you</p><ul><li>For each knowledge source in a spec, state where it lives, how fresh it must be and who may see it.</li><li>Ask for a long-context baseline before approving a RAG build. Sometimes the pipeline isn’t needed.</li><li>Reject any proposal that puts changing facts into fine-tuned weights.</li></ul></div>"
+  },
+  {
+   "t": "Embeddings, chunking, hybrid search and reranking",
+   "shelf": "Durable",
+   "html": "<p>RAG quality is decided before the model writes a word. If the passage with the answer isn’t in the retrieved set, the best model in the world will either guess or say it doesn’t know. A PM who can name the stages of the pipeline can find where answers are lost.</p><div class=\"tbl\"><table><thead><tr><th>Stage</th><th>What happens</th><th>Main knobs</th><th>Typical failure</th></tr></thead><tbody><tr><td>Chunking</td><td>Documents are split into passages</td><td>Size, overlap, split on headings</td><td>Answer split across chunks; chunk lacks the context to be understood</td></tr><tr><td>Embedding</td><td>Each chunk becomes a vector of meaning</td><td>Embedding model, domain fit</td><td>Similar-sounding but wrong passages rank high</td></tr><tr><td>Lexical index (BM25)</td><td>Keyword matching on exact terms</td><td>Tokenisation, field weights</td><td>Misses paraphrases</td></tr><tr><td>Fusion</td><td>Dense and lexical results are merged</td><td>Weighting, rank fusion method</td><td>One signal drowns the other</td></tr><tr><td>Reranking</td><td>A stronger model rescores the top candidates against the query</td><td>Reranker model, candidate count</td><td>Adds latency; can’t recover what wasn’t retrieved</td></tr><tr><td>Selection</td><td>Top-k chunks go into context</td><td>k, ordering, deduplication</td><td>Too few misses facts; too many adds noise</td></tr></tbody></table></div><h3>Embeddings and their blind spots</h3><p>An <strong>embedding</strong> maps text to a vector so that passages with similar meaning sit near each other. That is excellent for paraphrase (“cancel my plan” finds “ending your subscription”) and poor for exact tokens. Error codes, SKUs, ticket numbers, version strings and names often embed close to unrelated text. Negation and numbers are also weak spots. This is why <strong>hybrid search</strong>, combining dense vectors with keyword search such as BM25, is the standard production setup.</p><h3>Chunking</h3><p>Chunks are usually a few hundred tokens. Split on document structure (headings, sections, list items) rather than fixed character counts, keep a little overlap, and attach the document title and section heading to each chunk. A chunk that says “this limit is 30 days” is useless without knowing which product and which limit.</p><h3>What the evidence says</h3><p>Anthropic’s contextual retrieval write-up is a clear worked example. On their test sets, measured as the share of questions where the right chunk wasn’t in the top 20, the baseline failure rate was 5.7%. Prepending a short, model-written context to each chunk before embedding cut failures by 35%. Adding the same trick to BM25 cut them by 49%. Adding a reranker cut them by 67%, to 1.9%. Passing 20 chunks beat passing 10 or 5. These are one vendor’s numbers on its own datasets, so treat them as a direction and test on yours.</p><div class=\"callout\"><p class=\"eyebrow\">Measure retrieval on its own</p><p>Evaluate retrieval separately from generation. For each eval question, record which passage holds the answer and check whether it appears in the top k (recall@k). If end-to-end accuracy is 70% and recall@20 is 72%, the model is fine and retrieval is the problem. If recall is 95%, look at the prompt and the model.</p></div><div class=\"pm\"><p class=\"eyebrow\">What changes for you</p><ul><li>Ask for recall@k as well as answer accuracy in every RAG quality review.</li><li>Require hybrid search whenever users type identifiers, codes or names.</li><li>Treat chunking and reranking as product decisions with eval results attached.</li></ul></div>"
+  },
+  {
+   "t": "Freshness, permissions and provenance",
+   "shelf": "Shifting",
+   "html": "<p>These three properties decide whether enterprise customers trust a knowledge feature. They are also where the cheapest architecture often turns out to be the wrong one, because each has to be enforced outside the model.</p><h3>Freshness</h3><p>Every index is a copy, and copies go stale. Write a freshness requirement per source, such as “pricing changes visible within 15 minutes; help articles within 24 hours” (illustrative). Then check the whole path: connector sync schedule, re-chunking, re-embedding, index refresh, and any answer cache. Deletions matter as much as updates. A withdrawn policy that is still retrievable will be quoted confidently, and a deleted customer record that survives in an index can be a data protection breach. Show the source’s last-updated date next to answers where it matters.</p><h3>Permissions</h3><p>The model must never be the access control. If a user can’t open a document in the source system, the retrieval layer must not return it to them. Enforce this at query time by filtering on the source system’s access lists for the requesting user, or by having agentic tools call source APIs with the user’s own credentials. Instructions in the system prompt such as “don’t reveal HR documents” are not a control. Injection or a careless question gets past them.</p><div class=\"tbl\"><table><thead><tr><th>Risk</th><th>Control</th><th>How to test</th></tr></thead><tbody><tr><td>User sees a document they can’t access in the source</td><td>Filter retrieval by the user’s source permissions on every query</td><td>Eval cases run as low-privilege users asking about restricted content</td></tr><tr><td>Permission change lags the index</td><td>Sync access lists more often than content; fail closed</td><td>Revoke access, query immediately, expect no result</td></tr><tr><td>Shared answer cache leaks across users</td><td>Key caches by permission scope, or cache only public content</td><td>Two users with different access ask the same question</td></tr><tr><td>Deleted content still answers</td><td>Propagate deletes to index and caches within a set time</td><td>Delete a test document, query after the SLA</td></tr><tr><td>Retrieved text carries injected instructions</td><td>Treat retrieved content as untrusted data (Chapter 12)</td><td>Plant an instruction in a test document</td></tr></tbody></table></div><h3>Provenance</h3><p>Provenance is the record of where an answer came from: document, version, section, timestamp. Store it with every chunk and carry it through to the answer as a citation users can click. Citations do three jobs. Users can check a claim, which builds calibrated trust (Chapter 9). Reviewers can see whether a wrong answer came from a bad source or a bad reading. And auditors can reconstruct what the system said and why. Check citations in your evals as well: an answer citing a passage that doesn’t support it is worse than no citation.</p><div class=\"callout\"><p class=\"eyebrow\">Ask in the design review</p><p>If a customer revokes an employee’s access at 09:00, when does the assistant stop showing that employee the customer’s documents? If nobody can answer with a number, the permission model isn’t finished.</p></div><div class=\"pm\"><p class=\"eyebrow\">What changes for you</p><ul><li>Write freshness SLAs per source, including deletes, and test them in the eval suite.</li><li>Require permission-aware retrieval with low-privilege test users before any enterprise launch.</li><li>Make citation accuracy an eval metric alongside answer accuracy.</li></ul></div>"
+  },
+  {
+   "t": "Data flywheels: turning usage into quality",
+   "shelf": "Durable",
+   "html": "<p>A data flywheel is the loop in which usage produces signals, signals improve the system, and a better system attracts more usage. Every AI pitch deck claims one. Few products actually turn it, because each link needs someone to own it.</p><h3>The loop, link by link</h3><ol><li><strong>Capture.</strong> Log inputs, retrieved context, outputs, tool calls and the user’s next action, with consent and retention rules agreed up front.</li><li><strong>Signal.</strong> Turn behaviour into labels: accepted, edited, regenerated, escalated, abandoned.</li><li><strong>Analyse.</strong> A person reads samples and clusters the failures (Chapter 5, error analysis).</li><li><strong>Improve.</strong> Fix the cheapest rung that addresses the cluster: prompt, examples, retrieval, tools, model, and only then fine-tuning.</li><li><strong>Verify.</strong> Add the failing cases to the eval set so the fix is measured and stays fixed.</li></ol><div class=\"tbl\"><table><thead><tr><th>Signal</th><th>Strength</th><th>Bias to watch</th></tr></thead><tbody><tr><td>Thumbs up or down</td><td>Weak; low volume</td><td>Mostly from annoyed or delighted users</td></tr><tr><td>Edit distance on accepted drafts</td><td>Strong for drafting features</td><td>Light edits can still hide factual fixes</td></tr><tr><td>Regenerate or retry</td><td>Moderate</td><td>Some users regenerate for variety</td></tr><tr><td>Escalation to a person</td><td>Strong for support and agents</td><td>Policy-driven escalations look like failures</td></tr><tr><td>Task completion downstream</td><td>Strongest</td><td>Slow; hard to attribute</td></tr></tbody></table></div><h3>Why flywheels stall</h3><ul><li><strong>No rights to the data.</strong> Enterprise contracts often forbid using customer content for training, and sometimes for any review. Settle what you may log, who may read it and whether it may train models before launch.</li><li><strong>Nobody reads it.</strong> Logs pile up without analysis. A weekly hour of reading traces beats a petabyte of unlabelled logs.</li><li><strong>Signals reward the wrong thing.</strong> Optimising for thumbs-up can reward flattery and confident tone (sycophancy, Chapter 1).</li><li><strong>The base model moves faster.</strong> A quarter of collected data can be overtaken by a new model release. Data that improves your evals keeps its value through model changes; data used only for a fine-tune may not.</li></ul><div class=\"callout\"><p class=\"eyebrow\">Where the value accrues</p><p>The most durable output of a flywheel is usually the eval set: thousands of real, hard, labelled cases from your domain that let you adopt each new model quickly and safely. That is harder for a competitor to copy than any single fine-tune (Chapter 13).</p></div><div class=\"pm\"><p class=\"eyebrow\">What changes for you</p><ul><li>Name an owner for each link of the loop, and put the weekly trace review in the team calendar.</li><li>Agree data rights (log, review, train) with legal and in customer contracts before launch.</li><li>Instrument implicit signals such as edits and escalations as well as thumbs.</li><li>Report how many new eval cases the flywheel produced each month.</li></ul></div>"
+  },
+  {
+   "t": "When fine-tuning (including RL fine-tuning) pays for itself",
+   "shelf": "Shifting",
+   "html": "<p>Fine-tuning sits at rung 5 of Chapter 1’s behaviour-change ladder. It changes weights, so it changes behaviour: format, tone, a narrow skill, or the ability of a small model to do what only a large one could. It is a poor store for facts. The business question is whether the gain beats the cost of building, evaluating and repeatedly re-doing it.</p><div class=\"tbl\"><table><thead><tr><th>Method</th><th>Learns from</th><th>Good for</th></tr></thead><tbody><tr><td>Supervised fine-tuning (SFT)</td><td>Input and ideal-output pairs</td><td>Consistent format and style; distilling a large model’s behaviour into a small one</td></tr><tr><td>Preference tuning (such as DPO)</td><td>Pairs of better and worse outputs</td><td>Tone and judgement where ideal outputs are hard to write but easy to compare</td></tr><tr><td>RL fine-tuning (RFT)</td><td>A grader that scores sampled outputs</td><td>Tasks with checkable answers: classification with expert labels, extraction, code, structured decisions</td></tr><tr><td>Adapters (such as LoRA) on open-weight models</td><td>Any of the above, training small extra weights</td><td>Cheaper training, many variants, self-hosting</td></tr></tbody></table></div><h3>RL fine-tuning in practice</h3><p>In RL fine-tuning the platform samples several answers per prompt, scores them with your grader and shifts the model toward higher-scoring ones. OpenAI’s documentation sets out conditions that generalise well: experts would agree on the right answer, a grader can score it, the model already succeeds sometimes (it can’t learn from a 0% start), and lucky guesses don’t earn full reward. It suggests starting with a few dozen to a few hundred high-quality examples. The grader is your eval, which is one more reason to build the eval first (Chapter 5).</p><p>Check the vendor position before planning. As of October 2026, OpenAI’s documentation says its hosted fine-tuning platform is closed to new users and winding down, with existing fine-tuned models served until their base models are retired. Hosted options at other providers and open-weight training remain. Vendor exit is a risk to price into any fine-tuning plan.</p><h3>A worked break-even (illustrative)</h3><p>An extraction feature makes 2 million calls a month on a frontier model at $0.012 per call: $24,000 a month. A fine-tuned small model matches it on the eval at $0.002 per call: $4,000 a month, saving $20,000. One-off costs: labelling and data work $30,000, six engineer-weeks, eval runs. Recurring: a re-train and re-eval each time the base model changes, say $10,000 a quarter, plus hosting. Payback is around three months, if quality holds in production and volume stays up. Halve the volume and payback doubles. If a new general model at small-tier prices matches the fine-tune next quarter, the remaining savings disappear.</p><div class=\"callout\"><p class=\"eyebrow\">Pays for itself when</p><p>Rungs 1–4 have plateaued on your eval; the task is narrow and stable for at least two quarters; volume is high enough that per-call savings dominate; you have hundreds of graded examples or a reliable grader; someone owns re-training; and the vendor or open-weight route will still exist next year.</p></div><div class=\"pm\"><p class=\"eyebrow\">What changes for you</p><ul><li>Require an eval plateau chart from rungs 1–4 before approving any fine-tune.</li><li>Model fine-tuning as a recurring cost with a re-train on every base model change, and include vendor-exit risk.</li><li>Keep the training data and grader as the asset. Expect to discard the weights.</li></ul></div>"
+  }
+ ],
+ "lab": {
+  "title": "Compare long context and RAG on your own documents",
+  "time": "about 3 hours",
+  "intro": "<p>You will answer the same 40 questions two ways over a real corpus and compare accuracy, latency and cost. The result is evidence for a knowledge architecture decision.</p>",
+  "steps": [
+   "<strong>Pick a corpus that fits in context.</strong> Choose real documents your users ask about, between 50,000 and 300,000 tokens: a product manual, a policy set, a help centre section. Record the token count and how often the content changes.",
+   "<strong>Write 40 questions with gold answers.</strong> Use real user questions where possible. Mix: 15 single-fact, 10 that need two or more passages, 5 that hinge on an exact identifier or number, 5 about recently changed content, 5 the corpus can’t answer. For each, note the passage that holds the answer.",
+   "<strong>Configuration A: long context.</strong> Put the whole corpus in a stable prefix with prompt caching on, followed by the question. Ask for an answer with quoted citations, or “not in the documents”.",
+   "<strong>Configuration B: RAG.</strong> Chunk at roughly 300–500 tokens on headings with the document title attached, index with hybrid search (embeddings plus BM25), and pass the top 20 chunks with the same answer instructions. Add a reranker if your stack has one.",
+   "<strong>Grade.</strong> Score each answer correct, partly correct, wrong or correctly abstained, and each citation supporting or not. For B, also record whether the gold passage was in the top 20 (recall@20).",
+   "<strong>Measure latency and cost.</strong> Record end-to-end latency (p50 and p95) and cost per question, separating first-call and cached-call cost for A. Project monthly cost at your real question volume.",
+   "<strong>Decide.</strong> Fill in the template, then state which configuration you would ship, at what corpus size the answer would flip, and which question type each approach failed most."
+  ],
+  "template": "<div class=\"tbl\"><table><thead><tr><th>Measure</th><th>A: long context</th><th>B: RAG</th><th>Notes</th></tr></thead><tbody><tr><td>Accuracy (all 40)</td><td></td><td></td><td></td></tr><tr><td>Multi-passage (10)</td><td></td><td></td><td></td></tr><tr><td>Exact identifier (5)</td><td></td><td></td><td></td></tr><tr><td>Correct abstentions (5)</td><td></td><td></td><td></td></tr><tr><td>Citation support rate</td><td></td><td></td><td></td></tr><tr><td>Recall@20</td><td>n/a</td><td></td><td>If low, retrieval is the bottleneck</td></tr><tr><td>Latency p50 / p95</td><td></td><td></td><td></td></tr><tr><td>Cost per question</td><td>First: … Cached: …</td><td></td><td></td></tr><tr><td>Projected monthly cost</td><td></td><td></td><td>At real volume</td></tr></tbody></table></div>",
+  "done": "<p>You have a filled comparison table, graded answers you can show others, and a recommendation with the corpus size or question mix at which it would change. You know whether misses come from retrieval or from reading. That becomes the evidence section of your knowledge architecture decision record.</p>"
+ },
+ "quiz": [
+  {
+   "q": "An internal policy assistant draws on 120 pages of HR policy (about 50,000 tokens) that every employee may read. Engineering proposes a vector database. What should you ask for first?",
+   "o": [
+    "A fine-tuned model trained on the policies",
+    "A larger chunk size for the vector index",
+    "A long-context baseline with prompt caching, measured on the same eval",
+    "Agentic search over the HR system"
+   ],
+   "a": 2,
+   "w": "A corpus this small and shared by all users often works well in a cached prompt with no pipeline. Measure that before building retrieval."
+  },
+  {
+   "q": "Users of a support RAG tool search for error codes like E-4021 and get articles about unrelated errors. What is the most likely fix?",
+   "o": [
+    "Add keyword search (such as BM25) alongside embeddings and fuse the results",
+    "Increase the model’s temperature",
+    "Use a bigger generation model",
+    "Reduce top-k from 20 to 5"
+   ],
+   "a": 0,
+   "w": "Embeddings handle paraphrase well and exact identifiers badly. Hybrid search recovers exact matches."
+  },
+  {
+   "q": "End-to-end accuracy on your RAG eval is 68%. Recall@20 for the gold passage is 70%. Where should the team focus?",
+   "o": [
+    "The generation prompt",
+    "Switching to a reasoning model",
+    "Fine-tuning the generator",
+    "Retrieval: chunking, hybrid search and reranking"
+   ],
+   "a": 3,
+   "w": "Accuracy is close to recall, so the model answers well when it gets the right passage. Most misses happen before generation."
+  },
+  {
+   "q": "An enterprise assistant’s system prompt says “Never reveal documents the user lacks access to.” Security asks how permissions are enforced. What is the right answer?",
+   "o": [
+    "The instruction is sufficient for frontier models",
+    "Retrieval filters by the requesting user’s source-system permissions on every query, and caches are scoped by permission",
+    "Restricted documents are summarised before indexing",
+    "Users must confirm they are authorised"
+   ],
+   "a": 1,
+   "w": "Prompts aren’t access control. Enforce permissions in retrieval and caching, outside the model."
+  },
+  {
+   "q": "A team wants to fine-tune so the model knows this quarter’s product catalogue and pricing, which changes weekly. What do you say?",
+   "o": [
+    "Use RL fine-tuning instead of SFT",
+    "Retrain weekly to keep it current",
+    "Use LoRA so retraining is cheaper",
+    "Changing, citable facts belong in retrieval or a tool; fine-tune only for behaviour"
+   ],
+   "a": 3,
+   "w": "Facts in weights go stale and can’t be cited. Fine-tuning is for behaviour such as format and skill."
+  },
+  {
+   "q": "You are considering RL fine-tuning for a contract-clause classifier. The current model scores 0% on a rare clause type. What is the main problem?",
+   "o": [
+    "RL fine-tuning needs the model to succeed sometimes; at 0% there is no reward signal to learn from",
+    "RL fine-tuning only works for code",
+    "The grader must be a human",
+    "Classification can’t be graded automatically"
+   ],
+   "a": 0,
+   "w": "RFT shifts the model toward higher-scoring samples it already produces. Improve the base with examples or context first, or use SFT."
+  }
+ ],
+ "deliverable": {
+  "title": "Knowledge architecture decision record",
+  "html": "<p>A one-page record in the style of an architecture decision record. It fixes where each kind of knowledge lives and why, so later changes start from evidence.</p><ol><li><strong>Context.</strong> The feature, its users and the questions it must answer. Volume and latency budget.</li><li><strong>Sources.</strong> A table of each knowledge source: size in tokens, change rate, owner, who may see it, and whether answers must cite it.</li><li><strong>Decision.</strong> Where each source lives: long context, RAG index, agentic tool, or weights. One sentence of reasoning per source.</li><li><strong>Alternatives considered.</strong> What was tested and rejected, with the lab’s accuracy, latency and cost numbers.</li><li><strong>Freshness.</strong> SLA per source for updates and deletes, and how it is monitored.</li><li><strong>Permissions.</strong> How access is enforced at query time and in caches, and the low-privilege test cases that prove it.</li><li><strong>Provenance.</strong> What metadata each chunk carries and how citations appear to users.</li><li><strong>Evals.</strong> Answer accuracy, recall@k, citation support and abstention rate, with thresholds (Chapter 5).</li><li><strong>Revisit triggers.</strong> For example: corpus passes 200k tokens, a new model with a larger window, recall drops below threshold, a source changes its update cadence.</li></ol><p>Store it alongside the code and update it when a trigger fires.</p>"
+ },
+ "reading": [
+  {
+   "label": "Anthropic: Introducing contextual retrieval",
+   "url": "https://www.anthropic.com/news/contextual-retrieval"
+  },
+  {
+   "label": "Liu et al., Lost in the Middle: How Language Models Use Long Contexts",
+   "url": "https://arxiv.org/abs/2307.03172"
+  },
+  {
+   "label": "Chroma: Context rot",
+   "url": "https://www.trychroma.com/research/context-rot"
+  },
+  {
+   "label": "OpenAI: Reinforcement fine-tuning guide",
+   "url": "https://developers.openai.com/api/docs/guides/reinforcement-fine-tuning"
+  }
+ ]
+}

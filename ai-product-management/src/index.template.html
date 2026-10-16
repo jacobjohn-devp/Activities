@@ -1,0 +1,1175 @@
+<title>AI Product Management</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: Internal Learning system. Flat grey ground, one hue per part, square ink title cards over circle/pill hero shapes; single light world by design. */
+:root {
+  --surface: #ebebeb; --surface-raised: #ffffff; --ink: #111111; --ink-muted: #5c5c5c; --on-ink: #ffffff; --border: #cfcfcf;
+  --lime: #9bcb1a; --orange: #f6a800; --orange-deep: #ec7404; --pink: #e98aa0; --sky: #24b4e6; --yellow: #f4b400; --blue: #3f8fda; --error: #ad2f27;
+  --card: #111111; --on-card: #ffffff; --track: #111111; --blend: multiply;
+  --font-sans: "Inter", "Helvetica Neue", Arial, sans-serif; --font-display: "Inter Tight", "Inter", "Helvetica Neue", Arial, sans-serif; --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --space-1: 4px; --space-2: 8px; --space-4: 16px; --space-6: 24px; --space-12: 48px;
+  --hue: var(--lime);
+  color-scheme: light;
+}
+/* Orbit: the dark theme. Ground goes to deep graphite, label cards to pure black, overlaps lighten instead of darken */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --surface: #17181a; --surface-raised: #222326; --ink: #f0f0f0; --ink-muted: #a6a6a6; --on-ink: #111111; --border: #36373b;
+  --card: #000000; --on-card: #ffffff; --track: #3a3b3f; --blend: screen; --error: #ff7a6e; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --surface: #17181a; --surface-raised: #222326; --ink: #f0f0f0; --ink-muted: #a6a6a6; --on-ink: #111111; --border: #36373b;
+  --card: #000000; --on-card: #ffffff; --track: #3a3b3f; --blend: screen; --error: #ff7a6e; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--surface); color: var(--ink); font-family: var(--font-sans); font-size: 16px; line-height: 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: var(--space-6) var(--space-12); }
+a { color: var(--ink); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; letter-spacing: -0.02em; font-family: var(--font-display); font-weight: 700; }
+.hue-lime { --hue: var(--lime); } .hue-sky { --hue: var(--sky); } .hue-orange { --hue: var(--orange); } .hue-pink { --hue: var(--pink); }
+
+/* top bar */
+.bar { display: flex; justify-content: space-between; align-items: center; gap: var(--space-4); padding-bottom: var(--space-6); border-bottom: 1px solid var(--border); margin-bottom: var(--space-12); }
+.mark { font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; text-decoration: none; }
+.bar nav { display: flex; gap: var(--space-4); font-size: 14px; }
+
+/* shared pieces */
+.tcard { background: var(--card); color: var(--on-card); padding: var(--space-4); position: relative; display: flex; flex-direction: column; justify-content: flex-end; }
+.tcard .tmark { position: absolute; top: var(--space-4); right: var(--space-4); font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.tcard .tnum { position: absolute; top: var(--space-4); left: var(--space-4); font-size: 12px; line-height: 16px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--hue); }
+.tcard .tname { font-weight: 700; letter-spacing: -0.015em; }
+.tcard .tsub { margin-top: var(--space-1); font-size: 12px; line-height: 16px; font-weight: 600; color: var(--hue); }
+.shape { fill: var(--hue); } .shape-ring { fill: none; stroke: var(--hue); stroke-width: 36px; } .mult { mix-blend-mode: var(--blend); }
+.tag { display: inline-flex; align-items: center; height: 24px; padding: 0 var(--space-2); border-radius: 9999px; font-size: 12px; line-height: 16px; font-weight: 600; background: var(--card); color: var(--on-card); white-space: nowrap; }
+.tag.hue { background: var(--hue); color: #111111; }
+.tag.line { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.btn { font: inherit; font-size: 14px; line-height: 20px; font-weight: 700; height: 40px; padding: 0 var(--space-4); border: 2px solid var(--ink); background: var(--card); color: var(--on-card); cursor: pointer; display: inline-flex; align-items: center; text-decoration: none; }
+.btn.secondary { background: transparent; color: var(--ink); }
+.btn:hover { background: var(--ink-muted); border-color: var(--ink-muted); color: var(--on-ink); }
+.progress { width: 100%; }
+.progress .head { display: flex; justify-content: space-between; font-size: 12px; line-height: 16px; font-weight: 600; margin-bottom: var(--space-1); }
+.progress .track { height: 8px; border-radius: 9999px; background: var(--track); overflow: hidden; }
+.progress .fill { height: 100%; border-radius: 9999px; background: var(--hue); }
+.eyebrow { font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); }
+
+/* home hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-12); align-items: end; margin-bottom: var(--space-12); }
+.hero h1 { font-size: 64px; line-height: 60px; letter-spacing: -0.03em; }
+.hero p.lede { font-size: 18px; line-height: 28px; max-width: 34em; margin: var(--space-6) 0 0; }
+.hero-art { position: relative; height: 340px; overflow: hidden; }
+.hero-art svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hero-art .tcard { position: absolute; left: 0; bottom: var(--space-6); width: 260px; min-height: 160px; }
+.hero-art .tname { font-size: 24px; line-height: 28px; }
+.facts { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-6); }
+
+.how { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-6); padding: var(--space-6) 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: var(--space-12); }
+.how h3 { font-size: 14px; line-height: 20px; margin-bottom: var(--space-1); }
+.how p { margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-muted); }
+.shelf { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+
+.part { margin-bottom: var(--space-12); }
+.part-head { display: flex; align-items: baseline; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-6); }
+.part-head h2 { font-size: 32px; line-height: 36px; }
+.part-head p { margin: 0; color: var(--ink-muted); font-size: 14px; max-width: 46em; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-6); }
+.course { text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: var(--space-2); }
+.course .heroimg { position: relative; height: 210px; overflow: hidden; }
+.course .heroimg svg { position: absolute; inset: 0; width: 100%; height: 100%; transition: transform .3s ease; }
+.course:hover .heroimg svg { transform: scale(1.04); }
+.course .tcard { position: absolute; left: 0; bottom: var(--space-4); width: 66%; min-height: 128px; }
+.course .tname { font-size: 20px; line-height: 24px; }
+.course .q { margin: var(--space-2) 0 0; font-size: 14px; line-height: 20px; }
+.course .meta { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+
+/* chapter */
+.ch-hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: var(--space-12); align-items: end; margin-bottom: var(--space-12); }
+.ch-hero .heroimg { position: relative; height: 300px; overflow: hidden; }
+.ch-hero .heroimg svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ch-hero h1 { font-size: 48px; line-height: 50px; letter-spacing: -0.025em; margin-top: var(--space-2); }
+.ch-hero .q { font-size: 18px; line-height: 28px; margin: var(--space-4) 0 0; max-width: 34em; }
+.ch-hero .tcard { position: absolute; left: 0; bottom: var(--space-6); width: 240px; min-height: 140px; }
+.ch-hero .tname { font-size: 22px; line-height: 26px; }
+.layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: var(--space-12); align-items: start; }
+.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--space-6)); display: grid; gap: var(--space-4); }
+.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-1); font-size: 14px; line-height: 20px; }
+.toc a { display: flex; gap: var(--space-2); text-decoration: none; padding: var(--space-1) 0; color: var(--ink-muted); }
+.toc a:hover { color: var(--ink); }
+.toc a .dot { flex: none; width: 12px; height: 12px; border-radius: 9999px; margin-top: 4px; box-shadow: inset 0 0 0 2px var(--ink); }
+.toc a.done .dot { background: var(--hue); box-shadow: inset 0 0 0 2px var(--ink); }
+.toc a.done { color: var(--ink); }
+.content { max-width: 720px; min-width: 0; }
+.lesson { padding-bottom: var(--space-12); margin-bottom: var(--space-12); border-bottom: 1px solid var(--border); scroll-margin-top: var(--space-6); }
+.lesson:last-child { border-bottom: 0; }
+.lesson-head { display: flex; justify-content: space-between; gap: var(--space-4); align-items: flex-start; margin-bottom: var(--space-4); flex-wrap: wrap; }
+.lesson h2 { font-size: 28px; line-height: 34px; }
+.lesson h3 { font-size: 18px; line-height: 26px; margin-top: var(--space-6); }
+.lesson p, .lesson li { max-width: 66ch; }
+.lesson p { margin: var(--space-4) 0 0; }
+.lesson ul, .lesson ol { margin: var(--space-4) 0 0; padding-left: 20px; display: grid; gap: var(--space-2); }
+.num { font-size: 12px; line-height: 16px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink-muted); }
+.callout { margin-top: var(--space-6); background: var(--card); color: var(--on-card); padding: var(--space-4) var(--space-6); }
+.callout .eyebrow { color: var(--hue); }
+.callout p { margin: var(--space-2) 0 0; }
+.callout code { background: #2a2a2a; color: #ffffff; }
+.pm { margin-top: var(--space-6); background: var(--surface-raised); padding: var(--space-4) var(--space-6); }
+.pm .eyebrow { color: var(--ink); }
+.pm ul { margin-top: var(--space-2); }
+code { font-family: var(--font-mono); font-size: 13px; background: var(--surface-raised); padding: 1px 4px; }
+.tbl { overflow-x: auto; margin-top: var(--space-6); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; line-height: 20px; min-width: 560px; }
+th { text-align: left; font-size: 12px; line-height: 16px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-muted); font-weight: 600; padding: var(--space-2) var(--space-2) var(--space-2) 0; border-bottom: 2px solid var(--ink); }
+td { padding: var(--space-2) var(--space-2) var(--space-2) 0; border-bottom: 1px solid var(--border); vertical-align: top; }
+td:first-child { font-weight: 600; }
+.check { display: inline-flex; align-items: center; gap: var(--space-2); font-size: 14px; font-weight: 600; cursor: pointer; user-select: none; }
+.check input { width: 18px; height: 18px; accent-color: var(--ink); margin: 0; }
+
+/* lab */
+.lab { background: var(--surface-raised); padding: var(--space-6); margin-top: var(--space-6); }
+.lab-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
+.field { display: grid; gap: var(--space-1); min-width: 0; }
+.field label { font-size: 12px; line-height: 16px; font-weight: 600; }
+.field input { font: inherit; font-size: 14px; height: 36px; padding: 0 var(--space-2); border: 1.5px solid var(--ink); border-radius: 2px; background: var(--surface-raised); color: var(--ink); width: 100%; font-variant-numeric: tabular-nums; }
+.field small { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.results { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; margin-top: var(--space-6); background: var(--card); }
+.result { background: var(--card); color: var(--on-card); padding: var(--space-4); }
+.result .k { font-size: 12px; line-height: 16px; font-weight: 600; color: var(--hue); }
+.result .v { font-size: 24px; line-height: 32px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: var(--space-1); }
+.result .s { font-size: 12px; line-height: 16px; opacity: .8; }
+.lab .note { font-size: 13px; line-height: 20px; color: var(--ink-muted); margin-top: var(--space-4); }
+.split { margin-top: var(--space-4); }
+.split .bars { display: flex; height: 24px; }
+.split .bars div { height: 100%; }
+.split .legend { display: flex; flex-wrap: wrap; gap: var(--space-4); font-size: 12px; line-height: 16px; margin-top: var(--space-2); }
+.split .sw { display: inline-block; width: 10px; height: 10px; border-radius: 9999px; margin-right: 6px; vertical-align: -1px; }
+.c-in { background: var(--ink); } .c-cache { background: var(--ink-muted); } .c-out { background: var(--hue); } .c-think { background: var(--orange-deep); }
+
+/* quiz */
+.quiz { display: grid; gap: var(--space-6); margin-top: var(--space-6); }
+.qitem { background: var(--surface-raised); padding: var(--space-6); }
+.qitem fieldset { border: 0; margin: 0; padding: 0; }
+.qitem legend { font-weight: 700; padding: 0; font-size: 16px; line-height: 24px; }
+.opts { display: grid; gap: var(--space-2); margin-top: var(--space-4); }
+.opt { display: flex; gap: var(--space-2); align-items: flex-start; padding: var(--space-2) var(--space-4); box-shadow: inset 0 0 0 1.5px var(--border); cursor: pointer; font-size: 14px; line-height: 20px; }
+.opt input { margin-top: 3px; accent-color: var(--ink); flex: none; }
+.opt.right { box-shadow: inset 0 0 0 2px var(--ink); background: color-mix(in srgb, var(--hue) 35%, var(--surface-raised)); }
+.opt.wrong { box-shadow: inset 0 0 0 2px var(--error); }
+.why { margin-top: var(--space-4); font-size: 14px; line-height: 20px; }
+.why strong.bad { color: var(--error); }
+.score { font-weight: 700; }
+
+/* glossary */
+.gsearch { display: flex; gap: var(--space-4); align-items: center; flex-wrap: wrap; margin-top: var(--space-6); }
+.gsearch input { font: inherit; font-size: 14px; height: 40px; padding: 0 var(--space-4); border: 1.5px solid var(--ink); border-radius: 2px; background: var(--surface-raised); color: var(--ink); width: min(360px, 100%); }
+.gfilters { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.gfilters button { font: inherit; font-size: 12px; font-weight: 600; height: 28px; padding: 0 var(--space-2); border-radius: 9999px; border: 0; background: transparent; box-shadow: inset 0 0 0 1.5px var(--ink); color: var(--ink); cursor: pointer; }
+.gfilters button[aria-pressed="true"] { background: var(--card); color: var(--on-card); }
+dl.gloss { display: grid; grid-template-columns: 200px minmax(0, 1fr); margin: var(--space-6) 0 0; }
+dl.gloss dt, dl.gloss dd { padding: var(--space-2) 0; border-bottom: 1px solid var(--border); margin: 0; font-size: 14px; line-height: 20px; }
+dl.gloss dt { font-weight: 700; padding-right: var(--space-4); }
+dl.gloss dd .tag { height: 20px; margin-left: var(--space-2); font-size: 11px; vertical-align: 1px; }
+.empty { font-size: 14px; color: var(--ink-muted); margin-top: var(--space-4); }
+
+/* planned chapter */
+.plan-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-6); }
+.plan-box { background: var(--surface-raised); padding: var(--space-6); }
+.plan-box h2 { font-size: 20px; line-height: 26px; margin-bottom: var(--space-2); }
+.plan-box ol, .plan-box ul { margin: var(--space-2) 0 0; padding-left: 20px; display: grid; gap: var(--space-2); font-size: 15px; }
+.plan-box p { margin: var(--space-2) 0 0; font-size: 15px; }
+.pager { display: flex; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-top: var(--space-12); padding-top: var(--space-6); border-top: 1px solid var(--border); }
+.sources { font-size: 13px; line-height: 20px; color: var(--ink-muted); }
+.sources a { color: var(--ink-muted); }
+
+@media (max-width: 900px) {
+  .hero, .ch-hero { grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
+  .hero h1 { font-size: 44px; line-height: 44px; }
+  .ch-hero h1 { font-size: 36px; line-height: 40px; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .how { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .toc { position: static; }
+  .lab-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .results { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .grid, .how, .plan-grid, .lab-grid { grid-template-columns: minmax(0, 1fr); }
+  .hero-art { height: 260px; }
+  dl.gloss { grid-template-columns: minmax(0, 1fr); }
+  dl.gloss dt { border-bottom: 0; padding-bottom: 0; }
+  .bar nav { display: none; }
+}
+/* ---------- elevation layer ---------- */
+/* Type: Inter Tight for display, mono for every label, number and datum */
+.eyebrow, .num, .tcard .tnum, .tcard .tmark, .result .k, th, .progress .head, .mark, .tag { font-family: var(--font-mono); letter-spacing: .02em; }
+.eyebrow, .num, .mark, th { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.tag { font-size: 11px; font-weight: 600; }
+.result .v { font-family: var(--font-display); letter-spacing: -0.02em; }
+.hero h1 { font-size: 88px; line-height: 80px; letter-spacing: -0.045em; font-weight: 800; }
+.part-head h2 { font-size: 40px; line-height: 42px; letter-spacing: -0.03em; }
+.tcard .tname { font-family: var(--font-display); letter-spacing: -0.02em; }
+.lesson h2 { font-size: 34px; line-height: 38px; letter-spacing: -0.03em; }
+body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+.theme-btn { font: inherit; font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; height: 28px; padding: 0 var(--space-2); background: transparent; color: var(--ink); border: 0; box-shadow: inset 0 0 0 1.5px var(--ink); border-radius: 9999px; cursor: pointer; }
+
+/* Poster openers, after the Braun posters: a shape bleeding off the edge, an oversized numeral knocked out where the shape crosses it, a black label card */
+.poster { position: relative; height: 540px; overflow: hidden; width: 100vw; margin-left: calc(50% - 50vw); margin-top: calc(-1 * var(--space-12)); }
+.poster-art { position: absolute; inset: 0; }
+.poster-art svg { width: 100%; height: 100%; display: block; }
+.pnum { font-family: var(--font-display); font-weight: 800; font-size: 420px; letter-spacing: -0.07em; fill: var(--ink); }
+.pnum.knock { fill: var(--surface); }
+.poster .tcard { position: absolute; left: max(max(16px, env(safe-area-inset-left, 0px)), calc((100vw - 1320px) / 2)); bottom: 48px; width: min(380px, calc(100% - 32px)); min-height: 220px; padding: var(--space-6); }
+.poster .tname { font-size: 40px; line-height: 42px; letter-spacing: -0.035em; }
+.poster .tsub { font-size: 12px; font-family: var(--font-mono); }
+.poster-foot { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: var(--space-12); align-items: end; padding-block: var(--space-6) var(--space-12); margin-bottom: var(--space-12); border-bottom: 1px solid var(--border); }
+.poster-foot .q { font-family: var(--font-display); font-size: 26px; line-height: 34px; letter-spacing: -0.02em; font-weight: 600; margin: var(--space-2) 0 0; max-width: 30em; text-wrap: balance; }
+.poster-foot .facts { justify-content: flex-end; margin: 0; }
+.poster-foot .intro { grid-column: 1 / -1; margin: 0; color: var(--ink-muted); font-size: 15px; max-width: 60em; }
+
+/* Scroll-driven motion: shapes drift as they pass through the viewport. At rest they sit in their designed position */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .poster-art svg { animation: artDrift linear both; animation-timeline: view(); animation-range: exit 0% exit 100%; transform-origin: 70% 30%; }
+    .poster .tcard { animation: cardLift linear both; animation-timeline: view(); animation-range: exit 0% exit 100%; }
+    .course .heroimg svg > * { animation: cardIn linear both; animation-timeline: view(); animation-range: entry 0% cover 35%; transform-box: fill-box; transform-origin: 50% 50%; }
+    .hero-art svg > * { animation: posterDrift linear both; animation-timeline: view(); animation-range: exit 0% exit 100%; transform-box: fill-box; transform-origin: 50% 50%; }
+    .htile .art svg > g:last-child, .htile .art svg > *:not(g) { animation: floatIn linear both; animation-timeline: view(); animation-range: entry 0% cover 40%; }
+  }
+}
+@keyframes posterDrift { to { transform: translateY(-90px) rotate(-6deg) scale(1.04); } }
+@keyframes artDrift { to { transform: translateY(-80px) scale(1.08) rotate(-2deg); } }
+@keyframes cardLift { to { transform: translateY(-140px); } }
+@keyframes cardIn { from { transform: translateX(36px) scale(.92); } to { transform: none; } }
+@keyframes floatIn { from { transform: translateY(10px) rotate(-6deg); } to { transform: none; } }
+
+/* Reading mode: notes move into the margin, a progress line tracks the page */
+.readline { position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; height: 3px; background: var(--hue); transform-origin: 0 50%; transform: scaleX(0); z-index: 60; pointer-events: none; }
+.is-chapter .wrap { max-width: 1320px; }
+.lesson-body { display: grid; gap: var(--space-6); }
+.lesson-note .pm { margin-top: 0; }
+@media (min-width: 1240px) {
+  .is-chapter .content { max-width: none; }
+  .lesson-body { grid-template-columns: minmax(0, 700px) 280px; gap: var(--space-12); align-items: start; }
+  .lesson-note { position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--space-6)); }
+  .lesson-note .pm { margin-top: 64px; background: transparent; padding: 0 0 0 var(--space-4); box-shadow: inset 2px 0 0 var(--hue); }
+  .lesson-note .pm li { font-size: 14px; line-height: 21px; }
+}
+.lesson-main > p:first-child { font-size: 18px; line-height: 29px; }
+
+/* Lab checklists */
+.labsteps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); counter-reset: step; }
+.labsteps li { counter-increment: step; display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: var(--space-2); max-width: none; }
+.labsteps li::before { content: counter(step, decimal-leading-zero); font-family: var(--font-mono); font-size: 12px; font-weight: 600; line-height: 24px; color: var(--ink-muted); }
+.labstep { align-items: flex-start; font-weight: 400; font-size: 15px; line-height: 23px; }
+.labstep input { margin-top: 3px; flex: none; }
+.labstep input:checked + span { color: var(--ink-muted); }
+.lab h3 { margin-top: var(--space-6); }
+.lab .callout { margin-top: var(--space-6); }
+
+/* Explainers */
+.xp { margin-top: var(--space-6); background: var(--card); color: var(--on-card); padding: var(--space-6); }
+.xp .eyebrow { color: var(--hue); }
+.xp h4 { margin: var(--space-1) 0 0; font-family: var(--font-display); font-size: 20px; line-height: 26px; letter-spacing: -0.02em; }
+.xp p.cap { margin: var(--space-2) 0 0; font-size: 13px; line-height: 19px; color: #b5b5b5; }
+.xp textarea { width: 100%; margin-top: var(--space-4); font: inherit; font-size: 15px; line-height: 22px; padding: var(--space-2) var(--space-4); background: #1d1d1f; color: #ffffff; border: 1.5px solid #4a4a4a; border-radius: 2px; resize: vertical; min-height: 72px; }
+.xp textarea:focus-visible, .xp input:focus-visible, .xp button:focus-visible { outline: 2px solid var(--hue); outline-offset: 2px; }
+.toks { display: flex; flex-wrap: wrap; gap: 3px; margin-top: var(--space-4); font-family: var(--font-mono); font-size: 13px; line-height: 20px; }
+.toks span { padding: 1px 4px; white-space: pre; background: #2a2a2c; color: #ffffff; }
+.toks span:nth-child(3n+2) { background: var(--hue); color: #111111; }
+.toks span:nth-child(3n+3) { background: #4a4a4c; }
+.xstats { display: flex; flex-wrap: wrap; gap: var(--space-6); margin-top: var(--space-4); }
+.xstats div { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: #b5b5b5; }
+.xstats b { display: block; font-family: var(--font-display); font-size: 28px; line-height: 32px; letter-spacing: -0.02em; text-transform: none; color: #ffffff; font-variant-numeric: tabular-nums; }
+.xrow { display: flex; flex-wrap: wrap; gap: var(--space-6); align-items: center; margin-top: var(--space-4); }
+.xrow label { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; display: grid; gap: var(--space-1); min-width: 200px; flex: 1; }
+.xrow input[type=range] { width: 100%; accent-color: var(--hue); }
+.cw { margin-top: var(--space-4); }
+.cw-bar { position: relative; display: flex; height: 36px; background: #1d1d1f; box-shadow: inset 0 0 0 1px #4a4a4a; overflow: hidden; }
+.cw-bar div { height: 100%; transition: width .4s cubic-bezier(.3,.7,.3,1); }
+.cw-sys { background: #8a8a8a; } .cw-tools { background: #5f5f5f; } .cw-docs { background: var(--sky); } .cw-hist { background: var(--hue); }
+.cw-mark { position: absolute; top: -4px; bottom: -4px; width: 2px; background: #ffffff; left: 60%; }
+.cw-legend { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-top: var(--space-2); font-family: var(--font-mono); font-size: 11px; color: #b5b5b5; }
+.cw-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 9999px; margin-right: 6px; vertical-align: -1px; }
+.risk { display: inline-flex; align-items: center; height: 24px; padding: 0 var(--space-2); border-radius: 9999px; font-family: var(--font-mono); font-size: 11px; font-weight: 600; background: #2a2a2c; color: #ffffff; }
+.risk.mid { background: var(--orange); color: #111111; } .risk.high { background: #ff7a6e; color: #111111; }
+.steps { display: grid; grid-template-columns: repeat(25, minmax(0, 1fr)); gap: 4px; margin-top: var(--space-4); }
+.steps i { aspect-ratio: 1; border-radius: 9999px; background: #2a2a2c; transition: background .25s ease, transform .25s ease; }
+.steps i.on { background: #4a4a4c; }
+.steps i.ok { background: var(--hue); transform: scale(1.1); }
+.steps i.fail { background: #ff7a6e; transform: scale(1.25); }
+.xp .btn { background: #ffffff; color: #111111; border-color: #ffffff; height: 36px; }
+.xp .btn:hover { background: var(--hue); border-color: var(--hue); color: #111111; }
+.xp .verdict { font-family: var(--font-mono); font-size: 12px; color: #d0d0d0; min-height: 18px; }
+
+@media (max-width: 900px) {
+  .poster { height: 440px; }
+  .pnum { font-size: 300px; }
+  .poster .tname { font-size: 30px; line-height: 32px; }
+  .poster-foot { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+  .poster-foot .facts { justify-content: flex-start; }
+  .hero h1 { font-size: 56px; line-height: 54px; }
+}
+@media (max-width: 560px) { .steps { grid-template-columns: repeat(10, minmax(0, 1fr)); } .poster .tcard { min-height: 180px; bottom: 24px; } }
+
+/* Hoppy: the course buddy. A green long-eared face in a knitted grey hood, drawn flat from ellipses and pills */
+.buddy, .peek { --knit: #8f8c88; --knit-dark: #7a7773; --rib: #6b6865; --green: #9fc04f; --green-in: #86a83c; --mouth: #c8372d; }
+body { overflow-x: clip; }
+.peek { position: fixed; top: 0; z-index: 49; pointer-events: none; width: 80px; height: 84px; }
+.peek svg { display: block; width: 80px; height: 84px; overflow: visible; }
+.critter.cheer .whole { animation: cheer .8s ease-in-out 3; }
+.critter.cheer .arm-r { animation: armR .8s ease-in-out 3; }
+.critter.cheer .arm:not(.arm-r) { animation: armL .8s ease-in-out 3; }
+.critter.cheer .ear { animation: trail .4s ease-in-out 6; }
+@keyframes cheer { 0%, 100% { transform: translateY(0) scale(1.04, .96); } 45% { transform: translateY(-22px) scale(.98, 1.03); } }
+@keyframes armR { 0%, 100% { transform: rotate(0deg); } 45% { transform: rotate(-150deg); } }
+@keyframes armL { 0%, 100% { transform: rotate(0deg); } 45% { transform: rotate(150deg); } }
+.bubble.wide { width: min(340px, calc(100vw - 32px)); }
+.gift { display: grid; gap: var(--space-2); margin-top: var(--space-4); }
+.gift-art { background: #222222; aspect-ratio: 3 / 2; max-width: 100%; }
+.gift-art svg, .htile svg { display: block; width: 100%; height: 100%; }
+.gift strong { font-size: 16px; line-height: 22px; }
+.gift .yr { color: var(--hue); font-size: 12px; font-weight: 600; margin-left: var(--space-2); }
+.gift p { margin: var(--space-1) 0 0; font-size: 13px; line-height: 19px; }
+.hangar { margin-bottom: var(--space-12); }
+.hgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: var(--space-4); }
+.htile { background: var(--card); color: var(--on-card); padding: var(--space-2) var(--space-2) var(--space-4); display: grid; gap: var(--space-2); align-content: start; }
+.htile .art { aspect-ratio: 3 / 2; }
+.htile .nm { font-size: 14px; line-height: 18px; font-weight: 700; padding: 0 var(--space-2); }
+.htile .yr { font-size: 12px; line-height: 16px; font-weight: 600; color: var(--lime); padding: 0 var(--space-2); }
+.htile .fx { font-size: 12px; line-height: 17px; opacity: .85; padding: 0 var(--space-2); margin: 0; }
+.htile.locked .art { display: grid; place-items: center; font-size: 32px; font-weight: 700; color: #555555; }
+.htile.locked .nm { color: #9a9a9a; }
+.buddy {
+  position: fixed; left: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + var(--space-2)); z-index: 50; pointer-events: none; will-change: transform; }
+.buddy .critter { display: block; width: 64px; height: 96px; pointer-events: auto; cursor: pointer; overflow: visible; }
+.critter .knit { fill: var(--knit); }
+.critter .knit-dark { fill: var(--knit-dark); }
+.critter .rib { fill: none; stroke: var(--rib); stroke-width: 1.5; stroke-linecap: round; stroke-dasharray: 2 3; }
+.critter .rib-ring { fill: none; stroke: var(--rib); stroke-width: 2; stroke-dasharray: 1.5 2.5; stroke-linecap: round; }
+.critter .hood-rim { stroke: var(--knit); stroke-width: 6; stroke-dasharray: none; }
+.critter .green { fill: var(--green); }
+.critter .green-in { fill: var(--green-in); }
+.critter .ink { fill: #111111; }
+.critter .shine { fill: #ffffff; }
+.critter .mouth { fill: var(--mouth); }
+.critter .shadow { fill: #000000; opacity: .14; }
+.critter .whole, .critter .ear, .critter .arm, .critter .eye { transform-box: fill-box; }
+.critter .whole { transform-origin: 50% 100%; }
+.critter .ear { transform-origin: 50% 100%; animation: sway 4.8s ease-in-out infinite alternate; }
+.critter .ear-r { animation-delay: -2.4s; }
+.critter .arm { transform-origin: 50% 10%; }
+.critter .eye { transform-origin: 50% 50%; }
+.critter.idle .whole { animation: breathe 3.6s ease-in-out infinite; }
+.critter.hopping .whole { animation: glide 1.1s ease-in-out infinite; }
+.critter.hopping .ear { animation: trail 1.1s ease-in-out infinite; }
+.critter.waving .arm-r { animation: wave 3.6s ease-in-out 1; }
+.critter.blink .eye { animation: blink .32s ease-in-out 1; }
+@keyframes glide { 0%, 100% { transform: translateY(0) scale(1.02, .98); } 50% { transform: translateY(-9px) scale(.99, 1.01); } }
+@keyframes trail { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-6deg); } }
+@keyframes breathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.012, 1.025); } }
+@keyframes sway { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+@keyframes wave { 0%, 100% { transform: rotate(0deg); } 18% { transform: rotate(-135deg); } 34% { transform: rotate(-105deg); } 50% { transform: rotate(-135deg); } 66% { transform: rotate(-105deg); } 82% { transform: rotate(-130deg); } }
+@keyframes blink { 50% { transform: scaleY(.08); } }
+.bubble { position: absolute; bottom: 104px; right: 0; width: min(300px, calc(100vw - 32px)); background: var(--card); color: var(--on-card); padding: var(--space-4); pointer-events: auto; }
+.bubble::after { content: ""; position: absolute; right: 28px; bottom: -10px; border: 10px solid transparent; border-bottom: 0; border-top-color: var(--card); }
+.bubble .eyebrow { color: var(--hue); }
+.bubble p { margin: var(--space-1) 0 0; font-size: 14px; line-height: 20px; }
+.bubble .bact { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-4); }
+.bubble .btn { height: 32px; font-size: 12px; padding: 0 var(--space-2); border-color: #ffffff; background: #ffffff; color: #111111; }
+.bubble .btn.secondary { background: transparent; color: #ffffff; }
+.bubble .btn:hover { background: var(--hue); border-color: var(--hue); color: #111111; }
+.bubble .btn:focus-visible { outline-color: #ffffff; }
+@media (prefers-reduced-motion: reduce) { .critter.cheer .whole, .critter.cheer .arm, .critter.cheer .ear, .critter .ear, .critter.idle .whole, .critter.hopping .whole, .critter.hopping .ear, .critter.waving .arm-r, .critter.blink .eye { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .course .heroimg svg { transition: none; } html { scroll-behavior: auto; } }
+html { scroll-behavior: smooth; }
+</style>
+
+<div class="wrap">
+  <header class="bar">
+    <a class="mark" href="#home">Learning · AI Product Management</a>
+    <nav aria-label="Course"><a href="#home">All chapters</a><a href="#ch1">Start chapter 1</a><button type="button" class="theme-btn" id="theme-btn">Theme: system</button></nav>
+  </header>
+  <main id="app"></main>
+</div>
+
+<div class="buddy" id="buddy" hidden>
+  <div class="bubble" id="bubble" role="status" hidden>
+    <p class="eyebrow" id="beyebrow">Hoppy says</p>
+    <p id="btext"></p>
+    <div id="bgift" hidden></div>
+    <div class="bact"><a class="btn" id="bgo" href="#ch1">Go</a><button type="button" class="btn secondary" id="bclose">Not now</button></div>
+  </div>
+  <svg class="critter" id="critter" viewBox="0 0 80 120" role="img" aria-label="Hoppy, the course buddy">
+    <g class="whole">
+      <ellipse class="shadow" cx="40" cy="116" rx="20" ry="3"/>
+      <ellipse class="knit" cx="30" cy="112" rx="8" ry="4"/>
+      <ellipse class="knit" cx="50" cy="112" rx="8" ry="4"/>
+      <rect class="knit" x="20" y="76" width="40" height="38" rx="18"/>
+      <path class="rib" d="M27 92 Q40 96 53 92 M26 100 Q40 104 54 100"/>
+      <rect class="knit arm" x="15" y="82" width="8" height="18" rx="4"/>
+      <rect class="knit arm arm-r" x="57" y="82" width="8" height="18" rx="4"/>
+      <ellipse class="knit-dark" cx="40" cy="80" rx="26" ry="9"/>
+      <ellipse class="rib-ring" cx="40" cy="80" rx="22" ry="6"/>
+      <ellipse class="knit" cx="40" cy="56" rx="30" ry="27"/>
+      <g class="ear ear-l"><ellipse class="green" cx="27" cy="24" rx="7" ry="23" transform="rotate(-14 27 24)"/><ellipse class="green-in" cx="27" cy="24" rx="3" ry="16" transform="rotate(-14 27 24)"/></g>
+      <g class="ear ear-r"><ellipse class="green" cx="53" cy="22" rx="7" ry="23" transform="rotate(12 53 22)"/><ellipse class="green-in" cx="53" cy="22" rx="3" ry="16" transform="rotate(12 53 22)"/></g>
+      <ellipse class="green" cx="40" cy="59" rx="19" ry="18"/>
+      <ellipse class="rib-ring hood-rim" cx="40" cy="59" rx="23" ry="22"/>
+      <g class="eye"><ellipse class="ink" cx="31.5" cy="58" rx="6" ry="6.5"/><circle class="shine" cx="33.5" cy="55.5" r="1.8"/></g>
+      <g class="eye"><ellipse class="ink" cx="48.5" cy="58" rx="6" ry="6.5"/><circle class="shine" cx="50.5" cy="55.5" r="1.8"/></g>
+      <ellipse class="mouth" cx="41" cy="69.5" rx="3" ry="1.6"/>
+    </g>
+  </svg>
+</div>
+
+<script>
+(function () {
+var PARTS = [
+  { n: 'I', title: 'How the machine thinks', hue: 'lime', blurb: 'Accurate mental models of what an LLM is, how it is built and where its abilities stop. Everything later depends on these.' },
+  { n: 'II', title: 'Building blocks', hue: 'sky', blurb: 'The four levers an AI PM actually pulls: context, evals, agents and knowledge. This is where most quality is won or lost.' },
+  { n: 'III', title: 'Shipping AI products', hue: 'orange', blurb: 'Taking non-deterministic systems to production: how software gets built now, the UX of probabilistic features, reliability, unit economics and security.' },
+  { n: 'IV', title: 'Strategy and leadership', hue: 'pink', blurb: 'Making durable bets while the frontier moves every quarter, and reshaping the product team around it.' }
+];
+var CH = [
+  { id: 1, part: 0, shape: 'disc', title: 'The working vocabulary', sub: 'Terminology · 7 lessons', status: 'live', shelf: 'Durable concepts, perishable numbers',
+    q: 'Can you say exactly where a model’s knowledge lives, what one request costs and how its quality is measured?' },
+  { id: 2, part: 0, shape: 'ring', title: 'How LLMs are built', sub: 'Explainer · 6 lessons', shelf: 'Durable',
+    q: 'Why does a model behave the way it does, and which of its failures are structural rather than bugs?',
+    lessons: ['Pretraining: next-token prediction at scale and what it actually learns', 'Post-training: SFT, preference tuning and RL with verifiable rewards', 'Reasoning models and test-time compute: buying accuracy with tokens', 'Why hallucination is structural, and the levers that reduce it', 'Tokenization quirks: counting, arithmetic, rare languages and code', 'Knowledge cutoffs, recency and why the model is confidently out of date'],
+    lab: 'Run a failure-mode probe: 30 prompts designed to break a model (counting, recency, false premises, long-tail facts). Classify every failure by cause.',
+    out: 'A one-page “how our model fails” memo for one product surface.' },
+  { id: 3, part: 0, shape: 'half', title: 'Reading the frontier', sub: 'Capabilities · 5 lessons', shelf: 'Perishable, refreshed quarterly',
+    q: 'Which model should we bet on this quarter, and how would we know if the answer changed?',
+    lessons: ['The jagged frontier: superhuman and brittle in the same model', 'Reading benchmarks: SWE-bench, GPQA, HLE, ARC-AGI, and contamination', 'pass@1 versus pass^k: capability is not reliability', 'Model tiers and release cadence across the major labs', 'Running your own bake-off on your own tasks'],
+    lab: 'Bake off three models on 20 real tasks from your backlog. Score quality, latency and cost per task.',
+    out: 'A model selection memo with a re-evaluation trigger.' },
+  { id: 4, part: 1, shape: 'pill', title: 'Context engineering', sub: 'Building blocks · 6 lessons', shelf: 'Shifting',
+    q: 'Given a fixed model, how do you get the best possible answer through what you put in front of it?',
+    lessons: ['From prompt writing to context design: what the model sees per call', 'System prompts, examples and structured outputs that hold up', 'Context rot: why more context can make answers worse', 'Memory, compaction and long-running sessions', 'Prompt caching and the economics of a stable prefix', 'Skills and progressive disclosure: loading context only when needed'],
+    lab: 'Take a failing feature and improve it with context changes alone, measured against a fixed eval.',
+    out: 'A context spec: what goes in, in what order, with what budget.' },
+  { id: 5, part: 1, shape: 'discs', title: 'Evals are the spec', sub: 'Quality · 6 lessons', shelf: 'Durable',
+    q: 'How do you define “good” for a probabilistic feature precisely enough that engineering can ship against it?',
+    lessons: ['Error analysis first: reading 100 real outputs before writing a metric', 'Golden sets, rubrics and coverage of the long tail', 'LLM-as-judge: when it works, how to calibrate it against humans', 'Offline evals, online metrics and the gap between them', 'Regression gates for prompt, model and tool changes', 'Running an eval-driven roadmap'],
+    lab: 'Build a 50-case eval for a live feature, run it weekly, and report the trend.',
+    out: 'An eval spec that replaces the “requirements” section of your PRD.' },
+  { id: 6, part: 1, shape: 'stripes', title: 'Agents and tool use', sub: 'Systems · 6 lessons', shelf: 'Shifting fast',
+    q: 'When should a model act rather than answer, and how do you keep a long chain of actions on track?',
+    lessons: ['The agent loop: model, tools, environment, stopping condition', 'Designing tools models can use well', 'MCP, A2A and skills: the emerging standard stack', 'Computer use and browser agents', 'Compounding error: why 95% per step is 36% over 20 steps', 'Autonomy levels, approvals and long-running background agents'],
+    lab: 'Build an agent with three MCP tools for a real workflow and trace every step of ten runs.',
+    out: 'An agent design doc with an autonomy level and failure budget.' },
+  { id: 7, part: 1, shape: 'half', title: 'Knowledge and data', sub: 'Data · 5 lessons', shelf: 'Shifting',
+    q: 'Should knowledge live in the prompt, in an index, behind a tool or in the weights?',
+    lessons: ['Long context vs RAG vs agentic search vs fine-tuning', 'Embeddings, chunking, hybrid search and reranking', 'Freshness, permissions and provenance', 'Data flywheels: turning usage into quality', 'When fine-tuning (including RL fine-tuning) pays for itself'],
+    lab: 'Answer 40 questions over your own docs with long context and with RAG. Compare accuracy, latency and cost.',
+    out: 'A knowledge architecture decision record.' },
+  { id: 8, part: 2, shape: 'disc', title: 'AI coding, now and next', sub: 'Engineering · 6 lessons', shelf: 'Perishable, refreshed quarterly',
+    q: 'Coding agents now write a large share of code. Why hasn’t software output risen to match, and what is the PM’s new job?',
+    lessons: ['The landscape: IDE assistants, terminal agents, background and cloud agents', 'More code is not more software: review and integration become the bottleneck', 'Spec-driven development: the spec as the agent’s input', 'PMs who build: prototyping and internal tools with agents', 'Governance: tracing, permissions and code quality over time', 'Where it’s heading: longer autonomous runs, agents in CI, smaller teams'],
+    lab: 'Ship a working prototype with a coding agent in one day, then measure what review and hardening cost.',
+    out: 'A team playbook for agent-written code: who specs, who reviews, what gets merged.' },
+  { id: 9, part: 2, shape: 'ring', title: 'Designing AI experiences', sub: 'UX · 5 lessons', shelf: 'Shifting',
+    q: 'How do you design for a system that is sometimes wrong, often slow and always a little unpredictable?',
+    lessons: ['The autonomy dial: suggest, draft, act with approval, act', 'Calibrating trust: sources, uncertainty and showing work', 'Failure UX: recovery, undo and graceful refusal', 'Latency UX: streaming, progress and background work', 'Steerability and feedback that actually improves the system'],
+    lab: 'Redesign one existing flow at three points on the autonomy dial and test them with five users.',
+    out: 'An interaction spec covering the happy path and the three most likely failures.' },
+  { id: 10, part: 2, shape: 'stripes', title: 'Reliability and observability', sub: 'Operations · 5 lessons', shelf: 'Shifting',
+    q: 'How do you run, debug and upgrade a system whose output changes even when your code doesn’t?',
+    lessons: ['Tracing LLM and agent calls end to end', 'Guardrails, fallbacks and model cascades', 'Model upgrades: pinning, shadow runs and rollout', 'Drift, monitoring and incident response', 'SLOs for non-deterministic features'],
+    lab: 'Write and rehearse a model upgrade playbook using shadow traffic and your Chapter 5 eval.',
+    out: 'A runbook for model changes and AI incidents.' },
+  { id: 11, part: 2, shape: 'pill', title: 'Unit economics and pricing', sub: 'Business · 5 lessons', shelf: 'Perishable numbers, durable method',
+    q: 'What does this feature cost per user at the median and the 95th percentile, and how should we charge for it?',
+    lessons: ['Cost modeling: tokens, reasoning, tools and retries', 'Bending the curve: routing, caching, batching and smaller models', 'Why AI gross margins sit below classic SaaS', 'Seats, usage, hybrid and outcome-based pricing', 'Planning for falling prices and rising usage'],
+    lab: 'Model cost per user at median and heavy usage for a real feature, then test three pricing models against it.',
+    out: 'A pricing and margin brief for one AI feature.' },
+  { id: 12, part: 2, shape: 'discs', title: 'Security, safety and governance', sub: 'Risk · 5 lessons', shelf: 'Shifting fast',
+    q: 'What can go wrong when a model reads untrusted content and can take actions, and who signs off?',
+    lessons: ['Prompt injection and the lethal trifecta: private data, untrusted input, a way out', 'Permissions and sandboxing for agents', 'Data handling, retention and residency', 'Regulation: the EU AI Act and what it asks of product teams', 'Red teaming and launch reviews'],
+    lab: 'Threat-model your Chapter 6 agent and attack it with ten injection attempts.',
+    out: 'A launch risk review template your security team accepts.' },
+  { id: 13, part: 3, shape: 'disc', title: 'Strategy on a moving frontier', sub: 'Strategy · 5 lessons', shelf: 'Durable',
+    q: 'What will still be valuable when the next model is twice as capable and half the price?',
+    lessons: ['Build for the model six months out', 'Where moats actually come from: workflow, distribution, data, evals', 'Build, buy or wrap: platform risk and model dependence', 'Roadmapping when capabilities arrive unannounced', 'Telling a credible AI story to leadership'],
+    lab: 'Stress-test your roadmap: which items does a 2× better model make obsolete, and which does it unlock?',
+    out: 'A one-page AI strategy with explicit bets and kill criteria.' },
+  { id: 14, part: 3, shape: 'ring', title: 'The AI-native product team', sub: 'Leadership + capstone', shelf: 'Shifting',
+    q: 'How should a product team be shaped, staffed and run when everyone can build?',
+    lessons: ['Team shapes: smaller pods, PMs who build, engineers who spec', 'Who owns evals, context and model choice', 'Rituals: eval reviews, trace reviews, model upgrade days', 'Hiring and leveling for AI product roles', 'Capstone: the complete AI feature spec'],
+    lab: 'Capstone: take one AI feature from idea to a spec with evals, context design, agent design, economics, risks and rollout.',
+    out: 'A capstone spec, reviewed by a panel from product, engineering and security.' }
+];
+
+/* ---------- storage (per-viewer convenience only) ---------- */
+var CHDATA = {} /*CHDATA*/;
+function isLive(c) { return c.id === 1 || !!CHDATA[c.id]; }
+CH.forEach(function (c) { var d = CHDATA[c.id]; if (d) c.sub = c.sub.replace(/\d+ lessons/, d.lessons.length + ' lessons'); });
+var KEY = 'il-aipm-progress-v1', done = {};
+try { done = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { done = {}; }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(done)); } catch (e) {} }
+
+/* ---------- helpers ---------- */
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function hueOf(c) { return PARTS[c.part].hue; }
+function shapeSVG(kind) {
+  var k;
+  if (kind === 'ring') k = '<circle class="shape-ring" cx="210" cy="90" r="78"/>';
+  else if (kind === 'pill') k = '<rect class="shape" x="150" y="-40" width="120" height="280" rx="60"/>';
+  else if (kind === 'half') k = '<path class="shape" d="M150 0 A140 140 0 0 1 290 140 L290 200 L150 200 Z"/>';
+  else if (kind === 'stripes') k = [[36, 8], [60, 12], [88, 20], [124, 32], [172, 40]].map(function (r) { return '<rect class="shape" x="0" y="' + r[0] + '" width="320" height="' + r[1] + '"/>'; }).join('');
+  else if (kind === 'discs') k = '<circle class="shape mult" cx="230" cy="20" r="64"/><circle class="shape mult" cx="230" cy="110" r="64"/><circle class="shape mult" cx="230" cy="200" r="64"/>';
+  else k = '<circle class="shape" cx="210" cy="50" r="120"/>';
+  return '<svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' + k + '</svg>';
+}
+function lessonCount(c) { return c.id === 1 ? LESSONS.length : CHDATA[c.id] ? CHDATA[c.id].lessons.length : c.lessons.length; }
+function doneCount(c) { var n = 0; for (var i = 0; i < lessonCount(c); i++) if (done[c.id + '.' + (i + 1)]) n++; return n; }
+function progressHTML(c) {
+  var t = lessonCount(c), d = doneCount(c), p = Math.round(100 * d / t);
+  return '<div class="progress"><div class="head"><span>' + d + ' of ' + t + ' lessons</span><span>' + p + '%</span></div><div class="track" role="progressbar" aria-valuenow="' + p + '" aria-valuemin="0" aria-valuemax="100" aria-label="Chapter progress"><div class="fill" style="width:' + p + '%"></div></div></div>';
+}
+
+/* ---------- home ---------- */
+function home() {
+  var h = '';
+  h += '<section class="hero hue-lime"><div><p class="eyebrow">Internal Learning · course</p><h1>AI Product Management</h1>' +
+    '<p class="lede">Fourteen chapters for product managers who already ship complex software and now need to lead AI products with the same rigour: precise mental models, hands-on labs, and something you can use at work by the end of every chapter.</p>' +
+    '<div class="facts"><span class="tag">14 chapters</span><span class="tag">4 parts</span><span class="tag line">A lab per chapter</span><span class="tag line">Updated October 2026</span></div>' +
+    '<div class="facts"><a class="btn" href="#ch1">Start chapter 1</a><a class="btn secondary" href="#part-1">See the outline</a></div></div>' +
+    '<div class="hero-art" aria-hidden="true"><svg viewBox="0 0 520 340" preserveAspectRatio="xMidYMid slice">' +
+    '<circle class="shape" cx="330" cy="80" r="190" style="fill:var(--lime)"/><rect x="380" y="200" width="160" height="80" rx="40" style="fill:var(--sky)"/>' +
+    '<circle cx="470" cy="80" r="40" style="fill:none;stroke:var(--pink);stroke-width:20px"/><circle cx="300" cy="320" r="60" style="fill:var(--orange)"/></svg>' +
+    '<div class="tcard"><span class="tmark">Learning</span><div class="tname">From PM to AI PM</div><div class="tsub">Course · ' + CH.reduce(function (n, c) { return n + lessonCount(c); }, 0) + ' lessons</div></div></div></section>';
+  h += '<section class="how" aria-label="How each chapter works">' +
+    '<div><h3>A core question</h3><p>Each chapter opens with the question you’ll be able to answer by the end. If you can already answer it, skim.</p></div>' +
+    '<div><h3>Lessons with PM implications</h3><p>Short, technical explanations, each ending with what changes in your specs, roadmap or reviews.</p></div>' +
+    '<div><h3>A lab and a deliverable</h3><p>Every chapter has a hands-on exercise and one work artefact to take back to your team.</p></div>' +
+    '<div><h3>Shelf life</h3><p>Each chapter is labelled by how fast its content dates, so you know what to relearn.</p><div class="shelf"><span class="tag hue" style="--hue:var(--lime)">Durable</span><span class="tag hue" style="--hue:var(--sky)">Shifting</span><span class="tag hue" style="--hue:var(--orange)">Perishable</span></div></div></section>';
+  PARTS.forEach(function (p, pi) {
+    h += '<section class="part hue-' + p.hue + '" id="part-' + (pi + 1) + '"><div class="part-head"><span class="tag hue">Part ' + p.n + '</span><h2>' + esc(p.title) + '</h2><p>' + esc(p.blurb) + '</p></div><div class="grid">';
+    CH.filter(function (c) { return c.part === pi; }).forEach(function (c) {
+      var live = isLive(c);
+      h += '<a class="course" href="#ch' + c.id + '"><div class="heroimg">' + shapeSVG(c.shape) +
+        '<div class="tcard"><span class="tnum">' + String(c.id).padStart(2, '0') + '</span><span class="tmark">Learning</span><div class="tname">' + esc(c.title) + '</div><div class="tsub">' + esc(c.sub) + '</div></div></div>' +
+        '<p class="q">' + esc(c.q) + '</p><div class="meta">' + (live ? '<span class="tag hue">Ready</span>' : '<span class="tag line">Outline</span>') + '<span>' + esc(c.shelf) + '</span></div>' +
+        (live ? progressHTML(c) : '') + '</a>';
+    });
+    h += '</div></section>';
+  });
+  return h + hangarHTML();
+}
+
+/* ---------- chapter 1 content ---------- */
+var LESSONS = [
+{ t: 'Why precision pays', shelf: 'Durable', html:
+'<p>Most bad AI product decisions trace back to a sentence that sounded fine in a meeting. “The model knows our docs.” “We’ll fine-tune it.” “The agent handles it.” Each hides a design choice with a different cost, latency, freshness and failure mode. This chapter gives you the vocabulary to turn those sentences into decisions.</p>' +
+'<p>Take “the model knows our docs”. It can mean four different systems:</p>' +
+'<div class="tbl"><table><thead><tr><th>Where the knowledge lives</th><th>Freshness</th><th>Cost driver</th><th>Typical failure</th></tr></thead><tbody>' +
+'<tr><td>In the weights (fine-tuned)</td><td>Frozen at training time</td><td>Training runs and re-runs</td><td>Confidently stale; can’t cite</td></tr>' +
+'<tr><td>In the context (pasted in)</td><td>As fresh as each request</td><td>Input tokens on every call</td><td>Context rot as volume grows</td></tr>' +
+'<tr><td>Retrieved (RAG)</td><td>As fresh as the index</td><td>Indexing plus some input tokens</td><td>Right answer never retrieved</td></tr>' +
+'<tr><td>Fetched by a tool (agentic search)</td><td>Live</td><td>Extra model turns and latency</td><td>Agent searches badly or stops early</td></tr>' +
+'</tbody></table></div>' +
+'<div class="pm"><p class="eyebrow">What changes for you</p><ul><li>When someone says the model “knows” or “remembers” something, ask where it lives. The answer decides your freshness guarantee and your unit cost.</li><li>Keep a shared glossary (the last lesson in this chapter has a starter one). Teams that use the same words ship faster.</li></ul></div>' },
+
+{ t: 'Tokens, context and cost', shelf: 'Durable concepts, perishable numbers', html:
+'<p>A <strong>token</strong> is the unit a model reads and writes: a common word, a piece of a word, a punctuation mark. In English prose a token averages about three quarters of a word. Code, numbers, non-Latin scripts and unusual formatting use more tokens for the same content. Tokens are the unit of cost, speed and limits, so you should be able to estimate them as easily as you estimate story points.</p>' +
+'<h3>The context window</h3><p>The <strong>context window</strong> is everything the model sees in one call: system prompt, tool definitions, conversation history, retrieved documents, images, and the output it is writing. Frontier models now accept hundreds of thousands to around a million tokens. Two consequences matter more than the headline size:</p>' +
+'<ul><li><strong>Models are stateless.</strong> Between calls the model remembers nothing. “Memory” in a chat product is your application re-sending history, or a summary of it, on every turn. A 30-turn conversation pays for turn 1’s tokens 30 times unless you cache or compact.</li><li><strong>Bigger isn’t automatically better.</strong> Quality degrades as context fills, well before the limit. This is often called <strong>context rot</strong>: relevant facts in the middle of a long context get missed and irrelevant material distracts. Curating context beats maximising it (Chapter 4).</li></ul>' +
+'<h3>How you pay</h3><p>APIs price per million tokens, with <strong>output tokens</strong> typically several times the price of <strong>input tokens</strong>. Reasoning models also generate hidden <strong>thinking tokens</strong>, which are billed as output. <strong>Prompt caching</strong> lets a provider reuse an unchanged prefix (system prompt, tool definitions, a long document) at a large discount, often around 90% off the input price, so prompt structure is a cost decision: stable material first, variable material last. <strong>Batch</strong> APIs trade latency for a large discount on work that can wait hours.</p>' +
+'<div class="callout"><p class="eyebrow">Rule of thumb</p><p>Cost per request ≈ uncached input × input price + cached input × cache price + (output + thinking) × output price. The lab at the end of this chapter turns this into a model of a whole feature.</p></div>' +
+'<div class="pm"><p class="eyebrow">What changes for you</p><ul><li>Specify a token budget per request the way you’d specify a latency budget.</li><li>For chat and agent features, model cost per <em>session</em>, not per message. Session length is your biggest cost lever.</li><li>Ask engineering what share of input is cached. It’s often the cheapest win available.</li></ul></div>' },
+
+{ t: 'Inference: sampling, structure and speed', shelf: 'Durable', html:
+'<p><strong>Inference</strong> is running a trained model to produce output. A model doesn’t emit a word. It produces a probability distribution over the next token, and a <strong>sampling</strong> strategy picks one. Then it repeats.</p>' +
+'<ul><li><strong>Temperature</strong> scales how adventurous sampling is. Low for extraction and classification, higher for brainstorming. <strong>Top-p</strong> limits sampling to the most likely tokens that together cover probability p.</li><li><strong>Determinism is not guaranteed</strong>, even at temperature 0. Batching and hardware differences mean the same input can produce different output. Design and test as if every response is a sample, because it is.</li><li><strong>Structured outputs</strong> constrain generation to a JSON schema, so downstream code can rely on the shape. They guarantee the format, not that the content is correct.</li><li><strong>Max tokens</strong> and <strong>stop sequences</strong> bound output length. A truncated answer is a common, silent failure.</li></ul>' +
+'<h3>Speed has three numbers</h3><div class="tbl"><table><thead><tr><th>Metric</th><th>What it means</th><th>What users feel</th></tr></thead><tbody>' +
+'<tr><td>Time to first token (TTFT)</td><td>Delay before output starts</td><td>“Is it working?”</td></tr>' +
+'<tr><td>Output tokens per second</td><td>Generation speed once started</td><td>Reading pace of a streamed answer</td></tr>' +
+'<tr><td>End-to-end latency</td><td>Request in to final token out, including thinking and tool calls</td><td>Time until they can act</td></tr></tbody></table></div>' +
+'<p><strong>Throughput</strong> and <strong>rate limits</strong> (requests and tokens per minute) cap how many users you can serve at once. Check them before launch, not during.</p>' +
+'<div class="pm"><p class="eyebrow">What changes for you</p><ul><li>Write latency requirements as TTFT plus end-to-end, per surface. Streaming makes a 10-second answer feel acceptable, but a 10-second TTFT doesn’t.</li><li>Because outputs are samples, acceptance criteria must be rates (“≥ 95% of eval cases pass”), never single examples.</li></ul></div>' },
+
+{ t: 'Kinds of models', shelf: 'Shifting', html:
+'<p>“The model” is rarely one thing. Most products end up using several, chosen per task.</p>' +
+'<ul><li><strong>Frontier vs small tiers.</strong> Each major lab ships a large, most-capable model and faster, cheaper tiers. The price gap between tiers is often 10× or more, and the small tier is frequently good enough for classification, routing, extraction and summarisation.</li><li><strong>Reasoning (“thinking”) models</strong> spend extra tokens working through a problem before answering. This is <strong>test-time compute</strong>: you buy accuracy on hard, multi-step problems with latency and cost. Many APIs expose a thinking budget or effort setting, which is a product decision.</li><li><strong>Open-weight vs closed.</strong> Open-weight models can be self-hosted, fine-tuned freely and kept inside your network. You take on hosting, scaling and safety work, and usually trail the frontier by months.</li><li><strong>Multimodal</strong> models take images, audio, documents or video as input, and some generate them.</li><li><strong>Embedding models</strong> turn text into vectors so similar meanings sit close together. They power search and retrieval and don’t generate text.</li><li><strong>Distillation</strong> trains a small model to imitate a large one. <strong>Quantization</strong> stores weights at lower precision to run cheaper and faster, at some quality cost. <strong>Mixture-of-experts</strong> models activate only part of their parameters per token, so parameter count and cost don’t move together.</li></ul>' +
+'<p>Every model has a <strong>knowledge cutoff</strong>, the date its training data ends, and a <strong>model card</strong> describing intended use, evaluations and known limits. Read both before you commit.</p>' +
+'<div class="pm"><p class="eyebrow">What changes for you</p><ul><li>Treat model choice as per-task routing, not a single vendor decision. A cascade (small model first, escalate when unsure) is a standard cost pattern.</li><li>Put the thinking budget in your spec. It’s a quality, latency and cost dial in one.</li><li>Pin model versions in production and plan upgrades deliberately (Chapter 10).</li></ul></div>' },
+
+{ t: 'The behaviour-change ladder', shelf: 'Durable', html:
+'<p>When a model doesn’t do what you want, there’s an ordered set of fixes. Each rung is slower and more expensive than the one below. Climb only when your evals show the rung below has plateaued.</p>' +
+'<div class="tbl"><table><thead><tr><th>Rung</th><th>What it changes</th><th>Time to try</th><th>Use when</th></tr></thead><tbody>' +
+'<tr><td>1. Instructions</td><td>The system prompt and task framing</td><td>Minutes</td><td>Always first</td></tr>' +
+'<tr><td>2. Examples</td><td>Few-shot demonstrations of good output</td><td>Hours</td><td>Format, tone or judgement is off</td></tr>' +
+'<tr><td>3. Context and tools</td><td>Retrieval, tool access, better inputs</td><td>Days</td><td>The model lacks facts or the ability to act</td></tr>' +
+'<tr><td>4. Model choice</td><td>A different tier, vendor or reasoning budget</td><td>Days</td><td>Capability is the ceiling</td></tr>' +
+'<tr><td>5. Fine-tuning</td><td>Weights, via SFT, preference tuning, RL fine-tuning or adapters such as LoRA</td><td>Weeks</td><td>A narrow, stable, high-volume task with lots of graded examples</td></tr>' +
+'<tr><td>6. Pretraining</td><td>A new base model</td><td>Months</td><td>Almost never, for product teams</td></tr></tbody></table></div>' +
+'<p><strong>Supervised fine-tuning (SFT)</strong> teaches from input-output pairs. <strong>Preference tuning</strong> (such as RLHF or DPO) teaches from “A is better than B”. <strong>RL fine-tuning</strong> rewards outputs that pass a grader, which works well when correctness can be checked automatically. Fine-tuning is mostly for <em>behaviour</em> (format, style, a specialised skill), and a poor way to add <em>facts</em>, which go stale and can’t be cited.</p>' +
+'<div class="callout"><p class="eyebrow">The trap</p><p>“We’ll fine-tune it” is often proposed at rung 1 to avoid the unglamorous work of rungs 2 and 3. Also, the next base model frequently beats last quarter’s fine-tune, which is a reason to keep your eval set and drop the custom weights.</p></div>' +
+'<div class="pm"><p class="eyebrow">What changes for you</p><ul><li>Ask “which rung are we on, and what did the eval say about the last one?” in every quality review.</li><li>Budget fine-tuning as a recurring cost, since each new base model invites a re-run.</li></ul></div>' },
+
+{ t: 'Agents and tools', shelf: 'Shifting fast', html:
+'<p><strong>Tool use</strong> (also called function calling) lets a model request an action, such as a search, an API call or running code, which your application executes and returns. An <strong>agent</strong> is a model in a loop: it decides on an action, observes the result and repeats until it judges the task done or hits a limit. The code around the model that runs this loop, manages context and enforces limits is the <strong>harness</strong> (or scaffold).</p>' +
+'<ul><li><strong>MCP (Model Context Protocol)</strong> is an open standard for connecting models to tools and data through “servers”. It’s the de facto way to plug systems into agents. Anthropic donated it to the Linux Foundation’s Agentic AI Foundation in December 2025.</li><li><strong>A2A (Agent2Agent)</strong> is a protocol for agents to discover and call other agents across vendors. MCP connects an agent to tools; A2A connects agents to each other.</li><li><strong>Skills</strong> package instructions, scripts and reference files that an agent loads only when a task needs them, which keeps the context small.</li><li><strong>Computer use</strong> lets a model operate a screen, keyboard and browser for software with no API.</li><li><strong>Subagents</strong> and <strong>orchestration</strong> split a large task across several model instances, each with its own focused context.</li><li><strong>Human in the loop</strong> means a person approves, edits or can interrupt the agent at defined points.</li></ul>' +
+'<div class="callout"><p class="eyebrow">Compounding error</p><p>If each step succeeds 95% of the time, a 20-step task succeeds about 36% of the time (0.95<sup>20</sup>). Long agent runs need per-step reliability far above what’s acceptable for a single answer, plus checkpoints and recovery.</p></div>' +
+'<div class="pm"><p class="eyebrow">What changes for you</p><ul><li>Specify an <strong>autonomy level</strong> for every agent feature: suggest, draft, act with approval, or act. It’s the most important line in an agent spec.</li><li>Define the stopping condition and the step and spend limits explicitly.</li><li>Treat tool descriptions as product copy. The model reads them, and their quality directly affects behaviour.</li></ul></div>' },
+
+{ t: 'Quality and evaluation', shelf: 'Durable', html:
+'<p>You can’t manage what you can’t measure, and with AI you can’t measure by trying a few examples.</p>' +
+'<ul><li><strong>Hallucination</strong> (or confabulation): fluent, confident output that isn’t supported by facts or the provided sources. It’s a property of how models generate, so it can be reduced but not removed.</li><li><strong>Grounding</strong>: tying answers to supplied sources, ideally with <strong>citations</strong> users can check.</li><li><strong>Evals</strong>: systematic tests of model behaviour. <strong>Offline evals</strong> run a fixed dataset before shipping. <strong>Online evals</strong> measure real usage: acceptance, edits, retries, escalations.</li><li><strong>Golden set</strong>: a curated set of inputs with expected outputs or grading rubrics, covering common cases and the long tail.</li><li><strong>LLM-as-judge</strong>: using a model to grade outputs against a rubric. Fast and scalable, but only trustworthy once calibrated against human grades.</li><li><strong>pass@k vs pass^k</strong>: pass@k is “at least one of k tries succeeds” (capability). pass^k is “all k tries succeed” (reliability). Benchmarks usually report the first; products live or die on the second.</li><li><strong>Benchmark contamination</strong>: test questions leaking into training data, which inflates scores. One reason to trust your own evals over leaderboards.</li><li><strong>Sycophancy</strong>: the tendency to agree with the user or tell them what they want to hear.</li><li><strong>Jagged frontier</strong>: models can be superhuman at one task and fail a nearby, easier one. Never extrapolate capability from a demo.</li></ul>' +
+'<div class="pm"><p class="eyebrow">What changes for you</p><ul><li>Your acceptance criteria are an eval. Write them as a dataset and a pass threshold, not prose (Chapter 5).</li><li>Ask for pass^k on the critical path. A feature that works 4 times in 5 feels broken to users.</li><li>Read real outputs every week. Error analysis is the PM’s highest-leverage habit in AI products.</li></ul></div>' }
+];
+
+var QUIZ = [
+{ q: 'A support bot’s cost per conversation has tripled since launch, with no change in traffic or prompts. What is the most likely cause?', o: ['The provider raised prices', 'Conversations got longer, and each turn re-sends the growing history', 'Temperature was set too high', 'The embedding model changed'], a: 1, w: 'Models are stateless, so each turn re-sends history. Longer sessions grow cost much faster than message count. Caching and compaction are the fixes.' },
+{ q: 'Engineering proposes fine-tuning so the model “knows” this quarter’s pricing. What’s the main problem?', o: ['Fine-tuning can’t change model behaviour', 'Facts in weights go stale and can’t be cited; pricing belongs in context or behind a tool', 'Fine-tuning always costs more than pretraining', 'Pricing data is too small to fine-tune on'], a: 1, w: 'Fine-tuning is for behaviour. Changing facts belong where they can be updated and cited: retrieval, context or a tool.' },
+{ q: 'Each step of a 20-step agent workflow succeeds 95% of the time. Roughly how often does the whole workflow succeed?', o: ['95%', '81%', '36%', '5%'], a: 2, w: '0.95²⁰ ≈ 0.36. Long chains need much higher per-step reliability, checkpoints or human approvals.' },
+{ q: 'Your critical-path feature passes 9 of 10 eval cases on a single run. Which number should you also ask for?', o: ['pass@10', 'pass^k: whether the same cases pass on every one of several runs', 'Benchmark rank', 'Tokens per second'], a: 1, w: 'Outputs are samples. pass^k measures consistency, which is what users experience.' },
+{ q: 'Where should a long, unchanging system prompt and tool list go to cut cost?', o: ['At the end of the prompt', 'At the start, as a stable prefix that prompt caching can reuse', 'In the model’s weights', 'In a separate request'], a: 1, w: 'Caching reuses an unchanged prefix at a large discount. Put stable material first and variable material last.' },
+{ q: 'A team sets temperature to 0 and writes tests expecting identical output every run. What should you tell them?', o: ['That’s correct', 'Determinism isn’t guaranteed even at temperature 0; test with rates, schemas and rubrics', 'Use temperature 1 instead', 'Disable streaming to make output deterministic'], a: 1, w: 'Batching and hardware variation mean outputs can differ. Assert on structure and graded quality, not exact strings.' },
+{ q: 'Which pairing is right?', o: ['MCP connects agents to each other; A2A connects agents to tools', 'MCP connects agents to tools and data; A2A connects agents to other agents', 'Both are model training methods', 'MCP is a benchmark; A2A is a pricing model'], a: 1, w: 'They’re complementary layers, and a serious agent deployment often uses both.' },
+{ q: 'A reasoning model gives better answers but blows the latency budget on a simple classification task. What’s the best first move?', o: ['Fine-tune the reasoning model', 'Route this task to a small, non-reasoning tier, or lower the thinking budget, and check the eval', 'Increase max tokens', 'Remove the system prompt'], a: 1, w: 'Test-time compute buys accuracy on hard multi-step problems. Simple tasks rarely need it. Route per task and let the eval decide.' }
+];
+
+var GLOSS = [
+['A2A (Agent2Agent)', 'Protocol for agents to discover and call other agents across vendors.', 'Agents'],
+['Agent', 'A model in a loop that chooses actions, observes results and repeats until done or stopped.', 'Agents'],
+['Autonomy level', 'How much an AI feature may do without a person: suggest, draft, act with approval, act.', 'Agents'],
+['Batch API', 'Discounted, asynchronous processing for work that can wait hours.', 'Cost'],
+['Benchmark contamination', 'Test data leaking into training data, inflating scores.', 'Quality'],
+['Citation', 'A pointer from an answer to the source passage supporting it.', 'Quality'],
+['Computer use', 'A model operating a screen, keyboard and browser directly.', 'Agents'],
+['Context engineering', 'Designing everything the model sees per call: instructions, examples, retrieved data, tools, history.', 'Context'],
+['Context rot', 'Quality loss as context grows long or noisy, well before the window limit.', 'Context'],
+['Context window', 'The maximum tokens a model can consider in one call, input and output combined.', 'Context'],
+['Distillation', 'Training a smaller model to imitate a larger one.', 'Models'],
+['Embedding', 'A vector representing meaning, used for search and similarity.', 'Models'],
+['Eval', 'A systematic test of model behaviour against a dataset and grading method.', 'Quality'],
+['Fine-tuning', 'Further training a model’s weights on your examples to change behaviour.', 'Models'],
+['Golden set', 'A curated eval dataset of representative and edge-case inputs with expected results.', 'Quality'],
+['Grounding', 'Constraining answers to supplied sources.', 'Quality'],
+['Hallucination', 'Fluent, confident output not supported by facts or sources.', 'Quality'],
+['Harness', 'The code around a model that runs the agent loop, manages context and enforces limits.', 'Agents'],
+['Human in the loop', 'A person approves, edits or can interrupt at defined points.', 'Agents'],
+['Inference', 'Running a trained model to produce output.', 'Models'],
+['Jagged frontier', 'Uneven capability: superhuman at some tasks, failing at nearby easier ones.', 'Quality'],
+['Knowledge cutoff', 'The date a model’s training data ends.', 'Models'],
+['LLM-as-judge', 'Using a model to grade outputs against a rubric; needs calibration against humans.', 'Quality'],
+['LoRA', 'A cheap fine-tuning method that trains small adapter weights instead of the whole model.', 'Models'],
+['MCP (Model Context Protocol)', 'Open standard for connecting models to tools and data via servers.', 'Agents'],
+['Mixture-of-experts', 'Architecture that activates only part of the model per token.', 'Models'],
+['Open-weight model', 'A model whose weights are published, so you can host and modify it.', 'Models'],
+['pass@k', 'Probability at least one of k attempts succeeds: a measure of capability.', 'Quality'],
+['pass^k', 'Probability all k attempts succeed: a measure of reliability.', 'Quality'],
+['Prompt caching', 'Reusing an unchanged prompt prefix across calls at a discount.', 'Cost'],
+['Prompt injection', 'Untrusted content containing instructions that hijack the model.', 'Agents'],
+['Quantization', 'Storing weights at lower precision to run cheaper and faster.', 'Models'],
+['RAG', 'Retrieval-augmented generation: fetching relevant documents into context at request time.', 'Context'],
+['Rate limit', 'Cap on requests or tokens per minute for an account.', 'Cost'],
+['Reasoning model', 'A model that generates thinking tokens before answering, trading cost and latency for accuracy.', 'Models'],
+['RL fine-tuning', 'Fine-tuning that rewards outputs passing an automated grader.', 'Models'],
+['Skill', 'A package of instructions and files an agent loads only when a task needs it.', 'Agents'],
+['Structured output', 'Generation constrained to a schema such as JSON.', 'Models'],
+['Subagent', 'A separate model instance given a focused sub-task and its own context.', 'Agents'],
+['Sycophancy', 'Tendency to agree with or flatter the user.', 'Quality'],
+['Temperature', 'Sampling setting: lower is more predictable, higher is more varied.', 'Models'],
+['Test-time compute', 'Spending more computation at inference, such as thinking, to improve answers.', 'Models'],
+['Thinking tokens', 'Tokens a reasoning model generates before its answer, billed as output.', 'Cost'],
+['Token', 'The unit a model reads and writes: roughly ¾ of an English word.', 'Cost'],
+['Tool use', 'A model requesting an action that the application executes and returns.', 'Agents'],
+['TTFT', 'Time to first token: the delay before output begins.', 'Cost']
+];
+
+/* ---------- explainers: interactive diagrams inside lessons (keyed by lesson index) ---------- */
+var XP = {
+  1: function () {
+    return '<div class="xp"><p class="eyebrow">Explainer · tokens</p><h4>Watch text turn into tokens</h4>' +
+      '<textarea id="xp-text" aria-label="Text to tokenize">Our assistant summarises 1,250 customer tickets a day and drafts replies in each customer’s language.</textarea>' +
+      '<div class="toks" id="xp-toks" aria-live="polite"></div>' +
+      '<div class="xstats"><div>Tokens<b id="xp-tn">0</b></div><div>Words<b id="xp-wn">0</b></div><div>Tokens per word<b id="xp-tpw">0</b></div><div>1M requests at $3 / 1M<b id="xp-cost">$0</b></div></div>' +
+      '<p class="cap">An approximation for intuition: real tokenizers differ by model. Try a long technical word, a number, or another language and watch the count climb.</p></div>' +
+      '<div class="xp"><p class="eyebrow">Explainer · context window</p><h4>A conversation filling a 200k window</h4>' +
+      '<div class="xrow"><label for="xp-turns">Conversation turns <span id="xp-turns-v">20</span><input type="range" id="xp-turns" min="0" max="80" value="20"></label><span class="risk" id="xp-risk">Low risk</span></div>' +
+      '<div class="cw"><div class="cw-bar" role="img" aria-label="Context window usage" id="xp-bar"><div class="cw-sys"></div><div class="cw-tools"></div><div class="cw-docs"></div><div class="cw-hist"></div><span class="cw-mark" title="Illustrative point where quality risk rises"></span></div>' +
+      '<div class="cw-legend"><span><i class="cw-sys"></i>System prompt 2.5k</span><span><i class="cw-tools"></i>Tool definitions 4k</span><span><i class="cw-docs"></i>Retrieved docs 12k</span><span><i class="cw-hist"></i>History 2.5k per turn</span></div></div>' +
+      '<div class="xstats"><div>This request<b id="xp-req">0</b></div><div>Window used<b id="xp-used">0%</b></div><div>Sent so far this session<b id="xp-cum">0</b></div><div>Session input cost at $3 / 1M<b id="xp-ccost">$0</b></div></div>' +
+      '<p class="cap" id="xp-cwnote">Every turn re-sends everything before it, so total tokens sent grows much faster than the conversation. The marker at 60% is illustrative; where quality starts to slip depends on the model and the task.</p></div>';
+  },
+  5: function () {
+    var dots = ''; for (var i = 0; i < 50; i++) dots += '<i></i>';
+    return '<div class="xp"><p class="eyebrow">Explainer · compounding error</p><h4>Why long agent runs fail</h4>' +
+      '<div class="xrow"><label for="xp-p">Success per step <span id="xp-p-v">95.0%</span><input type="range" id="xp-p" min="80" max="99.9" step="0.1" value="95"></label>' +
+      '<label for="xp-n">Steps in the task <span id="xp-n-v">20</span><input type="range" id="xp-n" min="1" max="50" value="20"></label></div>' +
+      '<div class="steps" id="xp-steps" aria-hidden="true">' + dots + '</div>' +
+      '<div class="xstats"><div>Whole task succeeds<b id="xp-succ">36%</b></div><div>Expected failures in 100 runs<b id="xp-fail">64</b></div></div>' +
+      '<div class="xrow"><button type="button" class="btn" data-xp="run">Run the agent once</button><button type="button" class="btn" data-xp="run100">Run it 100 times</button><span class="verdict" id="xp-verdict" aria-live="polite"></span></div>' +
+      '<p class="cap">Raising per-step reliability from 95% to 99% takes a 20-step task from about 36% to about 82%. Checkpoints and human approvals reset the chain.</p></div>';
+  }
+};
+function approxTokens(s) {
+  var out = [], re = /(\s*)([A-Za-zÀ-ɏ]+|[0-9]{1,3}|[^\sA-Za-z0-9])/g, m;
+  while ((m = re.exec(s))) {
+    var sp = m[1] ? ' ' : '', w = m[2];
+    if (/^[A-Za-zÀ-ɏ]+$/.test(w) && w.length > 6) { var pos = 0, first = true; while (pos < w.length) { var len = first ? 5 : 4; out.push((first ? sp : '') + w.slice(pos, pos + len)); pos += len; first = false; } }
+    else out.push(sp + w);
+  }
+  return out;
+}
+function fmtK(n) { return n >= 1000 ? (n / 1000).toFixed(n >= 100000 ? 0 : 1) + 'k' : String(n); }
+function xpTokens() {
+  var ta = document.getElementById('xp-text'); if (!ta) return;
+  var toks = approxTokens(ta.value), words = (ta.value.match(/\S+/g) || []).length;
+  document.getElementById('xp-toks').innerHTML = toks.map(function (t) { return '<span>' + esc(t) + '</span>'; }).join('');
+  document.getElementById('xp-tn').textContent = toks.length;
+  document.getElementById('xp-wn').textContent = words;
+  document.getElementById('xp-tpw').textContent = words ? (toks.length / words).toFixed(2) : '0';
+  document.getElementById('xp-cost').textContent = '$' + (toks.length * 3).toLocaleString('en-US');
+}
+function xpContext() {
+  var r = document.getElementById('xp-turns'); if (!r) return;
+  var n = +r.value, W = 200000, sys = 2500, tools = 4000, docs = 12000, per = 2500, base = sys + tools + docs, hist = n * per, req = base + hist;
+  var bar = document.getElementById('xp-bar').children, cap = Math.min(1, W / req);
+  [sys, tools, docs, hist].forEach(function (v, i) { bar[i].style.width = (100 * v * cap / W) + '%'; });
+  var used = req / W, cum = n * base + per * n * (n + 1) / 2;
+  document.getElementById('xp-turns-v').textContent = n;
+  document.getElementById('xp-req').textContent = fmtK(req);
+  document.getElementById('xp-used').textContent = Math.round(100 * used) + '%';
+  document.getElementById('xp-cum').textContent = fmtK(cum);
+  document.getElementById('xp-ccost').textContent = '$' + (cum * 3 / 1e6).toFixed(2);
+  var risk = document.getElementById('xp-risk');
+  risk.className = 'risk' + (used > 1 ? ' high' : used > 0.6 ? ' high' : used > 0.35 ? ' mid' : '');
+  risk.textContent = used > 1 ? 'Over the window' : used > 0.6 ? 'High risk' : used > 0.35 ? 'Rising risk' : 'Low risk';
+  document.getElementById('xp-cwnote').textContent = used > 1
+    ? 'This conversation no longer fits. The app must drop, summarise or compact history, and each choice loses something. Design for it before users hit it.'
+    : 'Every turn re-sends everything before it, so total tokens sent grows much faster than the conversation. The marker at 60% is illustrative; where quality starts to slip depends on the model and the task.';
+}
+var xpRunning = false;
+function xpCompound() {
+  var p = document.getElementById('xp-p'); if (!p) return;
+  var pv = +p.value / 100, n = +document.getElementById('xp-n').value, s = Math.pow(pv, n);
+  document.getElementById('xp-p-v').textContent = (pv * 100).toFixed(1) + '%';
+  document.getElementById('xp-n-v').textContent = n;
+  document.getElementById('xp-succ').textContent = (s * 100 >= 10 ? Math.round(s * 100) : (s * 100).toFixed(1)) + '%';
+  document.getElementById('xp-fail').textContent = Math.round(100 * (1 - s));
+  if (!xpRunning) document.querySelectorAll('#xp-steps i').forEach(function (d, i) { d.className = i < n ? 'on' : ''; });
+}
+function xpRun() {
+  if (xpRunning) return; xpRunning = true;
+  var pv = +document.getElementById('xp-p').value / 100, n = +document.getElementById('xp-n').value, dots = document.querySelectorAll('#xp-steps i'), v = document.getElementById('xp-verdict');
+  dots.forEach(function (d, i) { d.className = i < n ? 'on' : ''; }); v.textContent = 'Running…';
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches, i = 0;
+  (function step() {
+    if (i >= n) { v.textContent = 'All ' + n + ' steps succeeded.'; xpRunning = false; return; }
+    var ok = Math.random() < pv; dots[i].className = ok ? 'ok' : 'fail';
+    if (!ok) { v.textContent = 'Failed at step ' + (i + 1) + ' of ' + n + '.'; xpRunning = false; return; }
+    i++; setTimeout(step, reduce ? 0 : 110);
+  })();
+}
+function xpRun100() {
+  var pv = +document.getElementById('xp-p').value / 100, n = +document.getElementById('xp-n').value, wins = 0;
+  for (var r = 0; r < 100; r++) { var ok = true; for (var s = 0; s < n && ok; s++) ok = Math.random() < pv; if (ok) wins++; }
+  document.getElementById('xp-verdict').textContent = wins + ' of 100 runs finished the task.';
+}
+function initExplainers() { xpTokens(); xpContext(); xpCompound(); }
+document.getElementById('app').addEventListener('input', function (e) {
+  var id = e.target.id;
+  if (id === 'xp-text') xpTokens(); else if (id === 'xp-turns') xpContext(); else if (id === 'xp-p' || id === 'xp-n') xpCompound();
+});
+document.getElementById('app').addEventListener('click', function (e) {
+  var b = e.target.closest('[data-xp]'); if (!b) return;
+  if (b.dataset.xp === 'run') xpRun(); else xpRun100();
+});
+
+/* ---------- reading progress line and theme ---------- */
+var readline = document.createElement('div'); readline.className = 'readline'; readline.hidden = true; readline.setAttribute('aria-hidden', 'true'); document.body.appendChild(readline);
+function updateReadline() {
+  if (readline.hidden) return;
+  var max = document.documentElement.scrollHeight - innerHeight;
+  readline.style.transform = 'scaleX(' + (max > 0 ? Math.min(1, scrollY / max) : 0) + ')';
+}
+window.addEventListener('scroll', updateReadline, { passive: true });
+var THEMES = ['system', 'light', 'dark'], theme = 'system';
+try { theme = localStorage.getItem('il-theme') || 'system'; } catch (e) {}
+function applyTheme() {
+  if (theme === 'system') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', theme);
+  var b = document.getElementById('theme-btn'); if (b) b.textContent = 'Theme: ' + theme;
+}
+document.addEventListener('click', function (e) {
+  if (!e.target.closest('#theme-btn')) return;
+  theme = THEMES[(THEMES.indexOf(theme) + 1) % 3]; try { localStorage.setItem('il-theme', theme); } catch (er) {} applyTheme();
+});
+applyTheme();
+
+function lessonId(i) { return 'l' + (i + 1); }
+function tocHTML(c, lessons, extras) {
+  var h = '<aside class="toc" aria-label="Chapter contents"><p class="eyebrow">In this chapter</p><ol>';
+  lessons.forEach(function (l, i) { h += '<li><a href="#ch' + c.id + '" data-jump="' + lessonId(i) + '" class="' + (done[c.id + '.' + (i + 1)] ? 'done' : '') + '"><span class="dot"></span><span>' + esc(l.t) + '</span></a></li>'; });
+  extras.forEach(function (x) { h += '<li><a href="#ch' + c.id + '" data-jump="' + x[0] + '"><span class="dot" style="border-radius:0"></span><span>' + esc(x[1]) + '</span></a></li>'; });
+  return h + '</ol><div id="chprog">' + progressHTML(c) + '</div></aside>';
+}
+function lessonsHTML(c, lessons, xp) {
+  var h = '';
+  lessons.forEach(function (l, i) {
+    var k = c.id + '.' + (i + 1), cut = l.html.lastIndexOf('<div class="pm">'), main = cut > 0 ? l.html.slice(0, cut) : l.html, note = cut > 0 ? l.html.slice(cut) : '';
+    var words = l.html.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length + (xp && xp[i] ? 120 : 0), mins = Math.max(2, Math.round(words / 220));
+    h += '<section class="lesson" id="' + lessonId(i) + '"><div class="lesson-head"><div><span class="num">Lesson ' + k + ' · ' + mins + ' min read · ' + esc(l.shelf) + '</span><h2>' + esc(l.t) + '</h2></div>' +
+      '<label class="check"><input type="checkbox" id="done-' + k.replace('.', '-') + '" data-key="' + k + '"' + (done[k] ? ' checked' : '') + '> Mark as done</label></div>' +
+      '<div class="lesson-body"><div class="lesson-main">' + main + (xp && xp[i] ? xp[i]() : '') + '</div>' + (note ? '<aside class="lesson-note">' + note + '</aside>' : '') + '</div></section>';
+  });
+  return h;
+}
+function pagerHTML(c) {
+  var prev = c.id > 1 ? '<a class="btn secondary" href="#ch' + (c.id - 1) + '">Previous: ' + esc(CH[c.id - 2].title) + '</a>' : '<a class="btn secondary" href="#home">All chapters</a>';
+  var next = c.id < 14 ? '<a class="btn" href="#ch' + (c.id + 1) + '">Next: ' + esc(CH[c.id].title) + '</a>' : '<a class="btn" href="#home">All chapters</a>';
+  return '<nav class="pager" aria-label="Chapters">' + prev + next + '</nav>';
+}
+function chapter1() {
+  var c = CH[0], h = '';
+  h += heroHTML(c, '<span class="tag hue">' + esc(c.shelf) + '</span><span class="tag line">About 2 hours</span><span class="tag line">3 explainers · lab · quiz</span>',
+    'By the end you can turn vague AI claims into concrete design choices, estimate what a feature costs per request and per user, and use the same words as your engineers.');
+  h += '<div class="layout">' + tocHTML(c, LESSONS, [['lab', 'Lab: cost model'], ['quiz', 'Check yourself'], ['glossary', 'Glossary'], ['deliverable', 'Deliverable']]) + '<div class="content">';
+  h += lessonsHTML(c, LESSONS, XP);
+  h += labHTML() + quizHTML(QUIZ, 'Apply the vocabulary') + glossHTML() +
+    '<section class="lesson" id="deliverable"><span class="num">Deliverable</span><h2>Your feature, decoded</h2><p>Pick one AI feature your team runs or is planning. On one page, answer:</p><ol>' +
+    '<li>Where does each piece of knowledge live: weights, context, retrieval or tool? How fresh must it be?</li><li>What does one request cost, and one user per month at the median and the heaviest 5%? (Use the lab.)</li><li>What are the TTFT and end-to-end latency budgets?</li><li>Which rung of the behaviour-change ladder is it on, and what eval result would justify the next one?</li><li>If it’s an agent, what’s its autonomy level and its stopping condition?</li><li>How is quality measured today: by eval, by anecdote or not at all?</li></ol>' +
+    '<p>Share it with your engineering lead and see where your answers differ. The differences are your team’s real backlog.</p>' +
+    '<p class="sources" style="margin-top:24px">Further reading: <a href="https://modelcontextprotocol.io" target="_blank" rel="noopener">Model Context Protocol</a> · <a href="https://a2a-protocol.org" target="_blank" rel="noopener">A2A protocol</a> · <a href="https://artificialanalysis.ai" target="_blank" rel="noopener">Artificial Analysis</a> (independent model, price and speed comparisons). Prices and limits change often; check your provider’s pricing page before modelling.</p></section>';
+  return h + pagerHTML(c) + '</div></div>';
+}
+function chapterPage(c, d) {
+  var mins = d.lessons.reduce(function (n, l) { return n + l.html.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length; }, 0) / 220;
+  var hrs = Math.max(1, Math.round((mins + 75) / 30) / 2);
+  var h = heroHTML(c, '<span class="tag hue">' + esc(c.shelf) + '</span><span class="tag line">About ' + hrs + ' hour' + (hrs === 1 ? '' : 's') + '</span><span class="tag line">' + d.lessons.length + ' lessons · lab · quiz</span>', '');
+  h += '<div class="layout">' + tocHTML(c, d.lessons, [['lab', 'Lab: ' + d.lab.title], ['quiz', 'Check yourself'], ['deliverable', 'Deliverable']]) + '<div class="content">';
+  h += lessonsHTML(c, d.lessons, null);
+  var L = d.lab;
+  h += '<section class="lesson" id="lab"><span class="num">Lab · ' + esc(L.time || '') + '</span><h2>' + esc(L.title) + '</h2>' + (L.intro || '') +
+    '<div class="lab"><ol class="labsteps">' + L.steps.map(function (st, i) {
+      var k = 'lab-' + c.id + '-' + i;
+      return '<li><label class="check labstep"><input type="checkbox" id="' + k + '" data-lab="' + k + '"' + (done[k] ? ' checked' : '') + '><span>' + st + '</span></label></li>';
+    }).join('') + '</ol>' + (L.template ? '<h3>Worksheet</h3>' + L.template : '') + (L.done ? '<div class="callout"><p class="eyebrow">What good looks like</p>' + L.done + '</div>' : '') + '</div></section>';
+  h += quizHTML(d.quiz, 'Apply it');
+  h += '<section class="lesson" id="deliverable"><span class="num">Deliverable</span><h2>' + esc(d.deliverable.title) + '</h2>' + d.deliverable.html +
+    (d.reading && d.reading.length ? '<p class="sources" style="margin-top:24px">Further reading: ' + d.reading.map(function (r) { return '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(r.label) + '</a>'; }).join(' · ') + '</p>' : '') + '</section>';
+  return h + pagerHTML(c) + '</div></div>';
+}
+
+/* Poster opener: shape geometry in a 1440×540 frame, reused as the clip that knocks the numeral out to the ground colour */
+function posterShape(kind, cid) {
+  var g, clip;
+  if (kind === 'ring') {
+    g = '<circle cx="1060" cy="270" r="200" style="fill:none;stroke:var(--hue);stroke-width:120px"/>';
+    clip = '<path clip-rule="evenodd" d="M800,270 a260,260 0 1,0 520,0 a260,260 0 1,0 -520,0 Z M940,270 a120,120 0 1,1 240,0 a120,120 0 1,1 -240,0 Z"/>';
+  } else if (kind === 'pill') { g = clip = '<rect x="900" y="-160" width="340" height="820" rx="170"/>'; }
+  else if (kind === 'half') { g = clip = '<path d="M820 0 A460 460 0 0 1 1280 460 L1280 540 L820 540 Z"/>'; }
+  else if (kind === 'stripes') { g = clip = [[150, 10], [190, 18], [240, 30], [305, 48], [390, 70], [490, 90]].map(function (r) { return '<rect x="0" y="' + r[0] + '" width="1440" height="' + r[1] + '"/>'; }).join(''); }
+  else if (kind === 'discs') { g = '<g class="mult">' + [30, 260, 490].map(function (y) { return '<circle class="mult" cx="1120" cy="' + y + '" r="190"/>'; }).join('') + '</g>'; clip = [30, 260, 490].map(function (y) { return '<circle cx="1120" cy="' + y + '" r="190"/>'; }).join(''); }
+  else { g = clip = '<circle cx="1040" cy="150" r="380"/>'; }
+  return { g: kind === 'ring' ? g : '<g class="shape">' + g + '</g>', clip: '<clipPath id="pclip' + cid + '">' + clip + '</clipPath>' };
+}
+function heroHTML(c, facts, intro) {
+  var p = PARTS[c.part], s = posterShape(c.shape, c.id), n = String(c.id).padStart(2, '0');
+  var num = '<text class="pnum" x="1410" y="512" text-anchor="end">' + n + '</text>';
+  return '<section class="poster" aria-label="Chapter ' + c.id + '"><div class="poster-art" aria-hidden="true"><svg viewBox="0 0 1440 540" preserveAspectRatio="xMaxYMid slice"><defs>' + s.clip + '</defs>' +
+      s.g + num + '<g clip-path="url(#pclip' + c.id + ')"><text class="pnum knock" x="1410" y="512" text-anchor="end">' + n + '</text></g></svg></div>' +
+    '<div class="tcard"><span class="tnum">Part ' + p.n + '</span><span class="tmark">Learning</span><h1 class="tname">' + esc(c.title) + '</h1><div class="tsub">' + esc(c.sub) + '</div></div></section>' +
+    '<div class="poster-foot"><div><p class="eyebrow">Part ' + p.n + ' · ' + esc(p.title) + ' · Chapter ' + c.id + ' of 14</p><p class="q">' + esc(c.q) + '</p></div><div class="facts">' + facts + '</div>' +
+    (intro ? '<p class="intro">' + intro + '</p>' : '') + '</div>';
+}
+
+function labHTML() {
+  var f = [
+    ['dau', 'Daily active users', 5000, 'People using the feature on a typical day'],
+    ['req', 'Requests per user per day', 12, 'Model calls, including agent steps'],
+    ['inTok', 'Input tokens per request', 6000, 'System prompt, tools, history, retrieved docs'],
+    ['cached', 'Share of input cached (%)', 60, 'Stable prefix reused across calls'],
+    ['outTok', 'Output tokens per request', 400, 'The visible answer'],
+    ['thinkTok', 'Thinking tokens per request', 800, '0 for non-reasoning models'],
+    ['pIn', 'Input price ($ per 1M)', 3, 'Placeholder: use your provider’s rate'],
+    ['pOut', 'Output price ($ per 1M)', 15, 'Placeholder: use your provider’s rate'],
+    ['heavy', 'Heavy-user multiplier (top 5%)', 6, 'How much more the heaviest users do']
+  ];
+  var h = '<section class="lesson" id="lab"><span class="num">Lab · about 30 minutes</span><h2>Model the cost of an AI feature</h2>' +
+    '<p>The example values describe a plausible in-product assistant, not your feature, and the prices are placeholders. Replace them with your own numbers, then answer the questions below the results.</p><div class="lab"><div class="lab-grid">';
+  f.forEach(function (x) { h += '<div class="field"><label for="f-' + x[0] + '">' + x[1] + '</label><input type="number" min="0" step="any" id="f-' + x[0] + '" value="' + x[2] + '" inputmode="decimal"><small>' + x[3] + '</small></div>'; });
+  h += '</div><div class="results" aria-live="polite">' +
+    '<div class="result"><div class="k">Per request</div><div class="v" id="r-req">–</div><div class="s">all tokens</div></div>' +
+    '<div class="result"><div class="k">Per user per month</div><div class="v" id="r-user">–</div><div class="s">median user</div></div>' +
+    '<div class="result"><div class="k">Heavy user per month</div><div class="v" id="r-heavy">–</div><div class="s">top 5%</div></div>' +
+    '<div class="result"><div class="k">Feature per month</div><div class="v" id="r-total">–</div><div class="s">all users, 30 days</div></div></div>' +
+    '<div class="split"><div class="bars" id="r-bars" role="img" aria-label="Share of cost by token type"></div><div class="legend" id="r-legend"></div></div>' +
+    '<p class="note">Cached input is priced at 10% of the input rate, a common discount. The monthly total assumes the median user and ignores heavy-user skew, retries and tool costs, which all add to it.</p></div>' +
+    '<h3>Answer these</h3><ol><li>Which token type dominates your cost? What single change would cut it most?</li><li>Set cached share to 0%, then 90%. How much does prompt structure alone move the monthly bill?</li><li>Set thinking tokens to 0. If quality held on your eval, what would that save in a year?</li><li>If you charged a flat seat price, what would a heavy user cost you as a share of that price?</li></ol></section>';
+  return h;
+}
+function money(v) { if (!isFinite(v)) return '–'; if (v < 0.01) return '$' + v.toFixed(4); if (v < 100) return '$' + v.toFixed(2); return '$' + Math.round(v).toLocaleString('en-US'); }
+function calc() {
+  function g(id) { var el = document.getElementById('f-' + id); var v = el ? parseFloat(el.value) : 0; return isFinite(v) && v >= 0 ? v : 0; }
+  var share = Math.min(100, g('cached')) / 100, M = 1e6;
+  var cIn = g('inTok') * (1 - share) * g('pIn') / M, cCache = g('inTok') * share * g('pIn') * 0.1 / M, cOut = g('outTok') * g('pOut') / M, cThink = g('thinkTok') * g('pOut') / M;
+  var per = cIn + cCache + cOut + cThink, user = per * g('req') * 30;
+  var set = function (id, v) { var el = document.getElementById(id); if (el) el.textContent = v; };
+  set('r-req', money(per)); set('r-user', money(user)); set('r-heavy', money(user * g('heavy'))); set('r-total', money(user * g('dau')));
+  var parts = [['Uncached input', cIn, 'c-in'], ['Cached input', cCache, 'c-cache'], ['Output', cOut, 'c-out'], ['Thinking', cThink, 'c-think']];
+  var bars = document.getElementById('r-bars'), leg = document.getElementById('r-legend');
+  if (bars && leg) {
+    bars.innerHTML = per > 0 ? parts.map(function (p) { return '<div class="' + p[2] + '" style="width:' + (100 * p[1] / per) + '%"></div>'; }).join('') : '';
+    leg.innerHTML = parts.map(function (p) { return '<span><span class="sw ' + p[2] + '"></span>' + p[0] + ' ' + (per > 0 ? Math.round(100 * p[1] / per) : 0) + '%</span>'; }).join('');
+  }
+}
+
+var CURQUIZ = [];
+function quizHTML(quiz, title) {
+  CURQUIZ = quiz; answers = {};
+  var h = '<section class="lesson" id="quiz"><span class="num">Check yourself · ' + quiz.length + ' questions</span><h2>' + esc(title) + '</h2><p>Each question is a situation you\u2019ll meet. Choose an answer to see the reasoning.</p><p class="score" id="qscore" aria-live="polite">0 of ' + quiz.length + ' answered</p><div class="quiz">';
+  quiz.forEach(function (x, i) {
+    h += '<div class="qitem"><fieldset><legend>' + (i + 1) + '. ' + esc(x.q) + '</legend><div class="opts">';
+    x.o.forEach(function (o, j) { h += '<label class="opt"><input type="radio" name="q' + i + '" id="q' + i + '-' + j + '" value="' + j + '"><span>' + esc(o) + '</span></label>'; });
+    h += '</div><div class="why" id="why' + i + '" hidden></div></fieldset></div>';
+  });
+  return h + '</div></section>';
+}
+var answers = {};
+function onQuiz(e) {
+  var t = e.target; if (!t.name || t.name.charAt(0) !== 'q' || t.type !== 'radio') return;
+  var i = +t.name.slice(1), x = CURQUIZ[i], pick = +t.value; answers[i] = pick === x.a;
+  var opts = t.closest('.opts').querySelectorAll('.opt');
+  opts.forEach(function (o, j) { o.classList.toggle('right', j === x.a); o.classList.toggle('wrong', j === pick && pick !== x.a); });
+  var w = document.getElementById('why' + i); w.hidden = false;
+  w.innerHTML = (pick === x.a ? '<strong>Correct.</strong> ' : '<strong class="bad">Not quite.</strong> ') + esc(x.w);
+  var n = Object.keys(answers).length, r = Object.keys(answers).filter(function (k) { return answers[k]; }).length;
+  document.getElementById('qscore').textContent = n + ' of ' + CURQUIZ.length + ' answered · ' + r + ' correct';
+}
+
+function glossHTML() {
+  var cats = ['All', 'Models', 'Context', 'Cost', 'Agents', 'Quality'];
+  var h = '<section class="lesson" id="glossary"><span class="num">Reference · ' + GLOSS.length + ' terms</span><h2>Glossary</h2><p>A starter glossary to copy into your team’s docs and extend. Filter by area or search.</p>' +
+    '<div class="gsearch"><input type="search" id="gq" placeholder="Search terms" aria-label="Search glossary"><div class="gfilters" role="group" aria-label="Filter by area">';
+  cats.forEach(function (c, i) { h += '<button type="button" data-cat="' + c + '" aria-pressed="' + (i === 0) + '">' + c + '</button>'; });
+  return h + '</div></div><dl class="gloss" id="glist"></dl><p class="empty" id="gempty" hidden>No terms match. Try a shorter search.</p></section>';
+}
+var gcat = 'All';
+function renderGloss() {
+  var q = (document.getElementById('gq') || {}).value || ''; q = q.toLowerCase().trim();
+  var list = GLOSS.filter(function (g) { return (gcat === 'All' || g[2] === gcat) && (!q || (g[0] + ' ' + g[1]).toLowerCase().indexOf(q) >= 0); });
+  var el = document.getElementById('glist'); if (!el) return;
+  el.innerHTML = list.map(function (g) { return '<dt>' + esc(g[0]) + '</dt><dd>' + esc(g[1]) + '<span class="tag line">' + g[2] + '</span></dd>'; }).join('');
+  document.getElementById('gempty').hidden = list.length > 0;
+}
+
+/* ---------- planned chapters ---------- */
+function planned(c) {
+  var h = heroHTML(c, '<span class="tag line">Outline · not written yet</span><span class="tag hue">' + esc(c.shelf) + '</span>', '');
+  h += '<div class="plan-grid"><div class="plan-box"><h2>Lessons</h2><ol>' + c.lessons.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ol></div>' +
+    '<div style="display:grid;gap:24px"><div class="plan-box"><h2>Lab</h2><p>' + esc(c.lab) + '</p></div><div class="plan-box"><h2>Deliverable</h2><p>' + esc(c.out) + '</p></div></div></div>';
+  var prev = c.id > 1 ? '<a class="btn secondary" href="#ch' + (c.id - 1) + '">Previous: ' + esc(CH[c.id - 2].title) + '</a>' : '';
+  var next = c.id < 14 ? '<a class="btn" href="#ch' + (c.id + 1) + '">Next: ' + esc(CH[c.id].title) + '</a>' : '<a class="btn" href="#home">All chapters</a>';
+  return h + '<nav class="pager" aria-label="Chapters">' + (prev || '<a class="btn secondary" href="#home">All chapters</a>') + next + '</nav>';
+}
+
+/* ---------- space junk: Hoppy's gifts for finishing a chapter ---------- */
+var STARS = '<g fill="#ffffff" opacity=".45"><circle cx="10" cy="12" r="1"/><circle cx="104" cy="70" r="1"/><circle cx="20" cy="66" r=".8"/><circle cx="92" cy="8" r=".8"/><circle cx="112" cy="40" r=".6"/></g>';
+var JUNK = [
+  { id: 'sputnik', name: 'Sputnik 1', year: '1957', fact: 'The first artificial satellite: a 58 cm polished sphere that beeped on two radio frequencies for 21 days, then burned up on re-entry in January 1958.',
+    art: '<circle cx="46" cy="40" r="15" fill="#d9d9d9"/><circle cx="41" cy="35" r="4" fill="#ffffff" opacity=".7"/><g stroke="#d9d9d9" stroke-width="1.6" stroke-linecap="round"><line x1="58" y1="32" x2="112" y2="14"/><line x1="60" y1="37" x2="116" y2="30"/><line x1="60" y1="44" x2="116" y2="50"/><line x1="58" y1="49" x2="110" y2="66"/></g>' },
+  { id: 'roadster', name: 'Starman’s Roadster', year: '2018', fact: 'Launched on the first Falcon Heavy test flight with a mannequin called Starman at the wheel. It now orbits the Sun, crossing the orbit of Mars.',
+    art: '<path d="M14 52 Q16 42 30 40 L46 38 Q56 30 70 32 L86 38 Q104 40 106 52 Z" fill="#d23a30"/><path d="M50 38 Q58 32 68 34 L74 38 Z" fill="#9ad3f0" opacity=".85"/><circle cx="62" cy="30" r="5" fill="#f2f2f2"/><rect x="59" y="34" width="6" height="5" rx="2" fill="#f2f2f2"/><circle cx="34" cy="54" r="7" fill="#2b2b2b" stroke="#888888" stroke-width="2"/><circle cx="88" cy="54" r="7" fill="#2b2b2b" stroke="#888888" stroke-width="2"/>' },
+  { id: 'toolbag', name: 'ISS tool bag', year: '2008', fact: 'Slipped away from astronaut Heidemarie Stefanyshyn-Piper during a spacewalk. For months it was bright enough to spot from Earth with binoculars.',
+    art: '<path d="M24 72 Q16 52 36 44" fill="none" stroke="#bdbdbd" stroke-width="1.5" stroke-dasharray="3 3"/><path d="M50 30 Q62 14 74 30" fill="none" stroke="#f2f2f2" stroke-width="4"/><rect x="38" y="30" width="48" height="34" rx="6" fill="#f2f2f2"/><rect x="38" y="42" width="48" height="5" fill="#c9c9c9"/><rect x="58" y="40" width="8" height="9" rx="1.5" fill="#9a9a9a"/>' },
+  { id: 'soyuz', name: 'Soyuz descent module', year: '1967 to today', fact: 'Soyuz has carried crews since 1967. The capsule comes down on the steppe of Kazakhstan, firing small rockets about a metre above the ground to soften the landing.',
+    art: '<g stroke="#d9d9d9" stroke-width="1" opacity=".7"><line x1="60" y1="24" x2="40" y2="4"/><line x1="60" y1="24" x2="80" y2="4"/></g><path d="M38 64 L48 28 Q60 20 72 28 L82 64 Z" fill="#8a6d4e"/><path d="M42 50 L80 58 L82 64 L38 64 Z" fill="#5a4532"/><ellipse cx="60" cy="64" rx="22" ry="4" fill="#3d2f22"/><circle cx="60" cy="38" r="4.5" fill="#2b2b2b" stroke="#c9a77c" stroke-width="1.5"/>' },
+  { id: 'vanguard', name: 'Vanguard 1', year: '1958', fact: 'A 16 cm sphere and the oldest human-made object still in orbit. It was also the first satellite powered by solar cells.',
+    art: '<g stroke="#d9d9d9" stroke-width="1.5" stroke-linecap="round"><line x1="60" y1="30" x2="60" y2="8"/><line x1="69" y1="45" x2="88" y2="58"/><line x1="51" y1="45" x2="32" y2="58"/><line x1="68" y1="34" x2="88" y2="22"/><line x1="52" y1="34" x2="32" y2="22"/><line x1="60" y1="50" x2="60" y2="72"/></g><circle cx="60" cy="40" r="10" fill="#d9d9d9"/><rect x="54" y="35" width="4" height="4" fill="#3f8fda"/><rect x="62" y="41" width="4" height="4" fill="#3f8fda"/>' },
+  { id: 'glove', name: 'Ed White’s glove', year: '1965', fact: 'A spare glove that floated out of the Gemini 4 capsule during the first American spacewalk.',
+    art: '<g transform="rotate(-18 60 40)"><rect x="45" y="14" width="7" height="26" rx="3.5" fill="#f2f2f2"/><rect x="53" y="10" width="7" height="28" rx="3.5" fill="#f2f2f2"/><rect x="61" y="12" width="7" height="26" rx="3.5" fill="#f2f2f2"/><rect x="69" y="18" width="6" height="22" rx="3" fill="#f2f2f2"/><rect x="34" y="36" width="16" height="7" rx="3.5" fill="#f2f2f2" transform="rotate(-30 42 40)"/><rect x="44" y="34" width="32" height="28" rx="10" fill="#f2f2f2"/><rect x="44" y="60" width="32" height="10" fill="#3f8fda"/></g>' },
+  { id: 'j002e3', name: 'J002E3', year: '1969, found 2002', fact: 'Spotted in 2002 and first taken for a new asteroid. It is most likely the third stage of the rocket that launched Apollo 12.',
+    art: '<path d="M30 32 L16 26 L16 54 L30 48 Z" fill="#9a9a9a"/><rect x="30" y="28" width="72" height="24" rx="3" fill="#f2f2f2"/><rect x="56" y="28" width="10" height="24" fill="#555555"/><rect x="102" y="33" width="6" height="14" fill="#c9c9c9"/>' },
+  { id: 'spatula', name: 'Space spatula', year: '2006', fact: 'Astronaut Piers Sellers lost the spatula he was using to test heat-shield repair material during a shuttle spacewalk. It drifted off into its own orbit.',
+    art: '<g transform="rotate(-30 60 40)"><rect x="22" y="37" width="52" height="6" rx="3" fill="#9a6b3f"/><rect x="72" y="28" width="28" height="24" rx="3" fill="#d9d9d9"/></g>' },
+  { id: 'envisat', name: 'Envisat', year: '2002', fact: 'An 8-tonne European Earth-observation satellite that fell silent in 2012. It is one of the largest pieces of debris in low Earth orbit.',
+    art: '<rect x="14" y="54" width="36" height="6" fill="#c9c9c9"/><rect x="40" y="44" width="4" height="10" fill="#c9c9c9"/><rect x="44" y="30" width="26" height="22" fill="#d9a441"/><rect x="70" y="36" width="44" height="10" fill="#3f8fda"/><g stroke="#2b2b2b" stroke-width="1"><line x1="81" y1="36" x2="81" y2="46"/><line x1="92" y1="36" x2="92" y2="46"/><line x1="103" y1="36" x2="103" y2="46"/></g>' }
+];
+function junkSVG(j) { return '<svg viewBox="0 0 120 80" role="img" aria-label="' + esc(j.name) + '">' + STARS + j.art + '</svg>'; }
+function pickJunk() {
+  var left = JUNK.filter(function (j) { return !done['junk-' + j.id]; }), pool = left.length ? left : JUNK;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+function hangarHTML() {
+  var n = JUNK.filter(function (j) { return done['junk-' + j.id]; }).length;
+  var h = '<section class="hangar" id="hangar"><div class="part-head"><span class="tag">Hoppy’s hangar</span><h2>Space junk collected</h2><p>Finish a chapter and Hoppy brings back a real piece of space junk. ' + n + ' of ' + JUNK.length + ' found.</p></div><div class="hgrid">';
+  JUNK.forEach(function (j) {
+    h += done['junk-' + j.id]
+      ? '<div class="htile"><div class="art">' + junkSVG(j) + '</div><div class="nm">' + esc(j.name) + '</div><div class="yr">' + esc(j.year) + '</div><p class="fx">' + esc(j.fact) + '</p></div>'
+      : '<div class="htile locked"><div class="art" aria-hidden="true">?</div><div class="nm">Still in orbit</div></div>';
+  });
+  return h + '</div></section>';
+}
+var pendingJump = null;
+
+/* ---------- Hoppy, the course buddy ---------- */
+var Hop = (function () {
+  var el = document.getElementById('buddy'), cr = document.getElementById('critter'), bub = document.getElementById('bubble'),
+      txt = document.getElementById('btext'), go = document.getElementById('bgo'), close = document.getElementById('bclose');
+  var IDLE_MS = 60000, SIZE = 64, timer = null, anim = null, x = -SIZE, state = 'off', helpedThisPage = false;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function vw() { return document.documentElement.clientWidth; }
+  function inset() { return Math.max(16, vw() > 1200 ? (vw() - 1120) / 2 - SIZE - 16 : 16); }
+  function place(px) { x = px; el.style.transform = 'translateX(' + px + 'px)'; }
+  /* Slow, eased travel: about 12ms per pixel, a soft bob on top, then settling into a gentle breathe */
+  function hopTo(to, done) {
+    if (anim) anim.cancel();
+    el.hidden = false;
+    if (reduce) { place(to); if (done) done(); return; }
+    var from = x, dist = Math.abs(to - from), dur = Math.max(1800, dist * 12);
+    cr.classList.remove('idle'); cr.classList.add('hopping');
+    anim = el.animate([{ transform: 'translateX(' + from + 'px)' }, { transform: 'translateX(' + to + 'px)' }], { duration: dur, easing: 'cubic-bezier(.45,.05,.4,.95)', fill: 'forwards' });
+    anim.onfinish = function () { place(to); anim.cancel(); anim = null; cr.classList.remove('hopping'); cr.classList.add('idle'); if (done) done(); };
+  }
+  function blink() { cr.classList.remove('blink'); void cr.getBoundingClientRect(); cr.classList.add('blink'); }
+  setInterval(function () { if (!el.hidden && !reduce && Math.random() < 0.6) blink(); }, 3200);
+  function hideAll() { bub.hidden = true; if (anim) { anim.cancel(); anim = null; } cr.classList.remove('hopping', 'waving', 'idle'); el.hidden = true; place(-SIZE); state = 'off'; }
+  /* A quick pass across the page each time a new page opens */
+  function flyBy() {
+    if (state === 'helping') return;
+    state = 'passing'; place(-SIZE);
+    hopTo(vw() + SIZE, function () { if (state === 'passing') hideAll(); });
+  }
+  function hint() {
+    var h = (location.hash || '').replace('#', ''), m = /^ch(\d+)$/.exec(h), id = m ? +m[1] : 0;
+    if (!id) return { t: 'Not sure where to start? Chapter 1 builds the vocabulary everything else uses, in about two hours.', go: 'Start chapter 1', href: '#ch1' };
+    if (id > 1 && !CHDATA[id]) return { t: 'Chapter ' + id + ' is still an outline. Chapter 1 is ready to work through now.', go: 'Open chapter 1', href: '#ch1' };
+    var secs = ['lab', 'quiz', 'glossary', 'deliverable'].map(function (s) { return document.getElementById(s); }), here = null;
+    document.querySelectorAll('.content > section').forEach(function (s) { var r = s.getBoundingClientRect(); if (r.top < innerHeight * 0.5) here = s; });
+    var sid = here ? here.id : 'l1';
+    if (sid === 'lab') return id === 1 ? { t: 'Try setting thinking tokens to 0, then cached share to 90%. Watch which bar shrinks.', go: 'Got it', href: '' } : { t: 'Labs work best on a real feature from your own backlog. Tick each step as you go; your ticks are saved.', go: 'Got it', href: '' };
+    if (sid === 'quiz') return { t: 'Pick any answer. You see the reasoning either way, and wrong answers teach the most.', go: 'Got it', href: '' };
+    if (sid === 'glossary' || sid === 'deliverable') return { t: 'Short on time? The deliverable works best with your engineering lead in the room.', go: 'Back to the top', href: '#ch' + id, jump: 'l1' };
+    var name = here ? (here.querySelector('h2') || {}).textContent : '';
+    if (id > 1) return { t: 'Taking a while on “' + name + '”? The “What changes for you” note sums it up, and the quiz checks what stuck.', go: 'Jump to the quiz', href: '#ch' + id, jump: 'quiz' };
+    return { t: 'Taking a while on “' + name + '”? Every term is defined in the glossary, and the quiz checks what stuck.', go: 'Open the glossary', href: '#ch1', jump: 'glossary' };
+  }
+  function help() {
+    if (helpedThisPage || state === 'helping') return;
+    helpedThisPage = true; state = 'helping';
+    var hnt = hint();
+    resetBubble();
+    txt.textContent = hnt.t; go.textContent = hnt.go; go.setAttribute('href', hnt.href || '#'); go.dataset.jump = hnt.jump || '';
+    go.dataset.dismiss = hnt.href ? '' : '1';
+    place(-SIZE);
+    hopTo(vw() - SIZE - inset(), function () {
+      if (state !== 'helping') return;
+      setTimeout(function () {
+        if (state !== 'helping') return;
+        cr.classList.remove('waving'); void cr.getBoundingClientRect(); cr.classList.add('waving');
+        setTimeout(function () { if (state === 'helping') bub.hidden = false; }, 700);
+      }, 500);
+    });
+  }
+  var eyebrow = document.getElementById('beyebrow'), gift = document.getElementById('bgift');
+  function resetBubble() { eyebrow.textContent = 'Hoppy says'; gift.hidden = true; gift.innerHTML = ''; bub.classList.remove('wide'); close.textContent = 'Not now'; }
+
+  /* Chapter finished: Hoppy glides in, jumps for joy, and hands over a piece of space junk */
+  function celebrate(ch, item) {
+    clearTimeout(timer); helpedThisPage = true; state = 'helping'; bub.hidden = true;
+    eyebrow.textContent = 'Chapter ' + ch.id + ' complete';
+    txt.textContent = 'You finished “' + ch.title + '”. Hoppy went into orbit and brought you something for your hangar.';
+    gift.innerHTML = '<div class="gift"><div class="gift-art">' + junkSVG(item) + '</div><div><strong>' + esc(item.name) + '</strong><span class="yr">' + esc(item.year) + '</span><p>' + esc(item.fact) + '</p></div></div>';
+    gift.hidden = false; bub.classList.add('wide');
+    go.textContent = 'See your hangar'; go.setAttribute('href', '#home'); go.dataset.jump = 'hangar'; go.dataset.dismiss = '';
+    close.textContent = 'Back to it';
+    if (el.hidden) place(-SIZE);
+    hopTo(vw() - SIZE - inset(), function () {
+      if (state !== 'helping') return;
+      cr.classList.remove('cheer', 'waving'); void cr.getBoundingClientRect(); cr.classList.add('cheer');
+      setTimeout(function () { cr.classList.remove('cheer'); if (state === 'helping') bub.hidden = false; }, reduce ? 0 : 2500);
+    });
+  }
+
+  /* Now and then, after a scroll settles, Hoppy peeks in from the side of the screen */
+  var pk = document.createElement('div'); pk.className = 'peek'; pk.hidden = true; pk.setAttribute('aria-hidden', 'true');
+  var pkSvg = cr.cloneNode(true); pkSvg.removeAttribute('id'); pkSvg.removeAttribute('role'); pkSvg.removeAttribute('aria-label');
+  pkSvg.setAttribute('viewBox', '0 0 80 84'); pkSvg.classList.add('idle'); pk.appendChild(pkSvg); document.body.appendChild(pk);
+  var lastPeek = Date.now() - 12000, scrollT = null, peeking = false;
+  function peek() {
+    peeking = true; lastPeek = Date.now();
+    var right = Math.random() < 0.6, top = Math.round(innerHeight * (0.25 + Math.random() * 0.4));
+    pk.style.top = top + 'px'; pk.style.left = right ? 'auto' : '0'; pk.style.right = right ? '0' : 'auto';
+    pk.style.transformOrigin = right ? '100% 100%' : '0% 100%';
+    var out = right ? 'translateX(100%) rotate(-55deg)' : 'translateX(-100%) rotate(55deg)',
+        inn = right ? 'translateX(30%) rotate(-55deg)' : 'translateX(-30%) rotate(55deg)',
+        tilt = right ? 'translateX(30%) rotate(-62deg)' : 'translateX(-30%) rotate(62deg)';
+    pk.hidden = false;
+    var a = pk.animate([{ transform: out }, { transform: inn, offset: 0.22 }, { transform: tilt, offset: 0.5 }, { transform: inn, offset: 0.78 }, { transform: out }], { duration: 4200, easing: 'ease-in-out' });
+    setTimeout(function () { pkSvg.classList.remove('blink'); void pkSvg.getBoundingClientRect(); pkSvg.classList.add('blink'); }, 1600);
+    a.onfinish = function () { pk.hidden = true; peeking = false; };
+  }
+  window.addEventListener('scroll', function () {
+    clearTimeout(scrollT);
+    scrollT = setTimeout(function () {
+      if (reduce || peeking || state !== 'off' || Date.now() - lastPeek < 20000 || Math.random() > 0.35) return;
+      peek();
+    }, 400);
+  }, { passive: true });
+
+  function leave() { bub.hidden = true; cr.classList.remove('waving'); state = 'leaving'; hopTo(vw() + SIZE, function () { if (state === 'leaving') hideAll(); }); }
+  function arm() { clearTimeout(timer); timer = setTimeout(help, IDLE_MS); }
+  function activity() { if (state !== 'helping') arm(); }
+  ['scroll', 'pointerdown', 'keydown', 'input'].forEach(function (ev) { window.addEventListener(ev, activity, { passive: true }); });
+  document.addEventListener('visibilitychange', function () { if (document.hidden) clearTimeout(timer); else activity(); });
+  close.addEventListener('click', leave);
+  go.addEventListener('click', function (e) {
+    if (go.dataset.dismiss) { e.preventDefault(); leave(); return; }
+    if (go.dataset.jump) {
+      if (location.hash === go.getAttribute('href')) { e.preventDefault(); var t = document.getElementById(go.dataset.jump); if (t) t.scrollIntoView(); }
+      else pendingJump = go.dataset.jump;
+    }
+    leave();
+  });
+  cr.addEventListener('click', blink);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && state === 'helping') leave(); });
+  return { celebrate: celebrate, onRoute: function () { helpedThisPage = false; if (state === 'helping') { bub.hidden = true; cr.classList.remove('waving'); state = 'off'; } arm(); setTimeout(flyBy, 400); } };
+})();
+
+/* ---------- router ---------- */
+var app = document.getElementById('app');
+function route() {
+  var hsh = (location.hash || '').replace('#', ''), m = /^ch(\d+)$/.exec(hsh), c = m ? CH[+m[1] - 1] : null;
+  if (c) {
+    document.body.className = 'is-chapter hue-' + hueOf(c);
+    app.innerHTML = c.id === 1 ? chapter1() : CHDATA[c.id] ? chapterPage(c, CHDATA[c.id]) : planned(c);
+    if (c.id === 1) { calc(); renderGloss(); initExplainers(); }
+    window.scrollTo(0, 0);
+    readline.hidden = false; updateReadline();
+  } else {
+    document.body.className = '';
+    readline.hidden = true;
+    app.innerHTML = home();
+    if (/^part-\d$/.test(hsh)) { var el = document.getElementById(hsh); if (el) el.scrollIntoView(); } else window.scrollTo(0, 0);
+  }
+  if (pendingJump) { var pj = document.getElementById(pendingJump); pendingJump = null; if (pj) pj.scrollIntoView(); }
+  Hop.onRoute();
+}
+app.addEventListener('input', function (e) { if (e.target.id && e.target.id.indexOf('f-') === 0) calc(); if (e.target.id === 'gq') renderGloss(); });
+app.addEventListener('change', function (e) {
+  var t = e.target;
+  if (t.dataset && t.dataset.key) {
+    if (t.checked) done[t.dataset.key] = 1; else delete done[t.dataset.key]; save();
+    var a = document.querySelector('[data-jump="l' + t.dataset.key.split('.')[1] + '"]'); if (a) a.classList.toggle('done', t.checked);
+    var c1 = CH[+t.dataset.key.split('.')[0] - 1];
+    var p = document.getElementById('chprog'); if (p && c1) p.innerHTML = progressHTML(c1);
+    if (c1 && t.checked && doneCount(c1) === lessonCount(c1) && !done['gift-' + c1.id]) {
+      var item = pickJunk(); done['gift-' + c1.id] = item.id; done['junk-' + item.id] = 1; save();
+      Hop.celebrate(c1, item);
+    }
+    return;
+  }
+  if (t.dataset && t.dataset.lab) { if (t.checked) done[t.dataset.lab] = 1; else delete done[t.dataset.lab]; save(); return; }
+  onQuiz(e);
+});
+app.addEventListener('click', function (e) {
+  var j = e.target.closest('[data-jump]');
+  if (j) { e.preventDefault(); var el = document.getElementById(j.dataset.jump); if (el) el.scrollIntoView(); return; }
+  var b = e.target.closest('[data-cat]');
+  if (b) { gcat = b.dataset.cat; document.querySelectorAll('[data-cat]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); renderGloss(); }
+});
+window.addEventListener('hashchange', route);
+route();
+})();
+</script>

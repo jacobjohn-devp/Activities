@@ -1,0 +1,47 @@
+name: AI Product Management course
+
+# Validates and builds the course on every pull request and push to main.
+# Cloudflare Pages deploys from the same branches; this check stops a broken
+# chapter from reaching it.
+on:
+  pull_request:
+    paths:
+      - 'ai-product-management/**'
+      - '.github/workflows/ai-product-management.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'ai-product-management/**'
+      - '.github/workflows/ai-product-management.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ai-product-management
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate chapters
+        run: python3 build.py --check
+      - name: Build site
+        run: python3 build.py
+      - name: Check the page script parses
+        run: |
+          python3 - <<'EOF'
+          import re
+          s = open('dist/index.html', encoding='utf-8').read()
+          open('/tmp/course.js', 'w', encoding='utf-8').write(re.findall(r'<script>([\s\S]*?)</script>', s)[0])
+          EOF
+          node --check /tmp/course.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ai-product-management-site
+          path: ai-product-management/dist
+          retention-days: 14

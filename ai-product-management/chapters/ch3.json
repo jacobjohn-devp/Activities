@@ -1,0 +1,141 @@
+{
+ "id": 3,
+ "lessons": [
+  {
+   "t": "The jagged frontier: superhuman and brittle in the same model",
+   "shelf": "Shifting",
+   "html": "<p>A frontier model can solve competition maths, write a working service from a spec and pass graduate-level science questions. The same model can miscount the items in a list, lose track of a simple spatial puzzle or confidently misread a table. Capability is uneven across tasks that look equally hard to a person. Researchers from Harvard Business School and BCG called this the <strong>jagged technological frontier</strong> in a 2023 field experiment with BCG consultants. On tasks inside the frontier, consultants using AI did more work, faster and at higher quality. On a task deliberately chosen to sit just outside it, consultants using AI were more likely to reach the wrong answer than those working without it, because the output looked just as convincing.</p><h3>Why the frontier is jagged</h3><p>Chapter 2 explains the causes, and they predict where the edges fall.</p><div class=\"tbl\"><table><thead><tr><th>Cause</th><th>Strong where</th><th>Weak where</th></tr></thead><tbody><tr><td>Pretraining coverage</td><td>Common languages, popular frameworks, well-documented domains</td><td>Niche regulation, internal systems, minority languages</td></tr><tr><td>RL with verifiable rewards</td><td>Code with tests, maths, tasks with checkable end states</td><td>Judgement, taste, persuasion, anything without a cheap grader</td></tr><tr><td>Tokenization</td><td>Prose and mainstream code</td><td>Character-level work, long-number arithmetic</td></tr><tr><td>Task horizon</td><td>Single answers and short tool sequences</td><td>Long tasks where small errors compound</td></tr><tr><td>Perception</td><td>Text, documents, clean screenshots</td><td>Dense visual layouts, novel spatial reasoning</td></tr></tbody></table></div><p>The horizon dimension is moving fastest. METR, an independent evaluator, measures the length of software tasks (in human working time) that agents can complete, and has reported that this horizon has grown rapidly, doubling on the order of months. Its figures also show that the horizon at which agents succeed 80% of the time is much shorter than the 50% horizon. A model that can sometimes finish a day-long task may reliably finish only far shorter ones. The 50% headline is the one that gets quoted.</p><div class=\"callout\"><p class=\"eyebrow\">The trap</p><p>The jagged frontier is invisible from a demo. A demo samples the inside of the frontier, chosen by someone who already knows where the edges are. Your users will sample the whole surface, including the edges, and the outputs at the edge look as confident as the ones inside.</p></div><h3>Mapping your own frontier</h3><p>Break each feature into the task types it actually contains: extract, classify, summarise, reason over numbers, plan, call tools, write in the brand voice. Score each separately on your eval. The product is only as good as its weakest frequent task. Re-map every quarter, because each release moves some edges a long way and leaves others almost where they were.</p><div class=\"pm\"><p class=\"eyebrow\">What changes for you</p><ul><li>Decompose features into task types and track eval results per task type. A single pass rate hides the edge your users will fall off.</li><li>Ask for failure examples in every demo review. “Show me where it breaks” is the question that reveals the frontier.</li><li>Design review steps and UI warnings around the known edges, since users can’t tell from the output which side they’re on (Chapter 9).</li><li>Keep a quarterly frontier map: for each task type, “reliable”, “usable with review” or “not yet”. Revisit roadmap bets when a cell changes.</li></ul></div>"
+  },
+  {
+   "t": "Reading benchmarks: SWE-bench, GPQA, HLE, ARC-AGI, and contamination",
+   "shelf": "Perishable",
+   "html": "<p>Benchmarks are the frontier’s public scoreboard. They’re useful for spotting broad trends and almost useless for choosing a model for your product. Read them like a sell-side analyst’s note: informative, but written for a purpose, and not about your business. Benchmark details below are as of October 2026.</p><div class=\"tbl\"><table><thead><tr><th>Benchmark</th><th>What it measures</th><th>Current status and caveats</th></tr></thead><tbody><tr><td>SWE-bench Verified</td><td>Agents fixing real GitHub issues in Python repositories, judged by the repository’s tests; a human-validated 500-task subset</td><td>In February 2026 OpenAI said it no longer considers it a suitable frontier measure, citing contamination and tests that reject correct fixes. Still widely quoted.</td></tr><tr><td>SWE-bench Pro</td><td>Long-horizon coding tasks (1,865 problems from 41 repositories) with public, held-out and commercial splits; built by Scale AI to resist contamination</td><td>Much harder than Verified. A later OpenAI audit reported flawed tasks in its public split too. Prefer results on the held-out and commercial splits.</td></tr><tr><td>GPQA Diamond</td><td>The hardest 198 of 448 graduate-level multiple-choice science questions written to be “Google-proof”</td><td>In the original paper, experts scored 65% and skilled non-experts with web access 34%. Frontier models now cluster near the top, so it no longer separates them.</td></tr><tr><td>Humanity’s Last Exam (HLE)</td><td>2,500 expert-written, closed-ended questions across dozens of subjects, many multimodal</td><td>An Epoch AI review in August 2026 rated it “Flawed”, finding substantial errors in 22 of 48 sampled questions. Revised variants exist; check which one a score uses.</td></tr><tr><td>ARC-AGI</td><td>Abstract reasoning on novel puzzles that are easy for people. ARC-AGI-3, launched in 2026, uses interactive game-like environments with no instructions and a hidden hold-out set</td><td>ARC-AGI-3 scores agents on whether they beat the games as efficiently as humans do. A useful signal on learning new tasks, and far from typical product work.</td></tr></tbody></table></div><h3>Contamination</h3><p><strong>Contamination</strong> means test items, or close paraphrases and solutions, were in the training data. Public benchmarks live on the web, so it is the default unless the benchmark designers work against it. OpenAI’s audit of SWE-bench Verified reported evidence that frontier models had seen some of its problems and solutions in training, which is a strong sign of memorisation. Warning signs include a large gap between public and held-out splits, much lower scores on problems created after the model’s cutoff, and verbatim recall of reference answers. Defences include private test sets, held-out splits and benchmarks that refresh continually.</p><h3>Five questions for any benchmark claim</h3><ol><li><strong>Who ran it?</strong> Vendor-reported numbers use the vendor’s best harness and settings. Independent evaluators such as Epoch AI and the benchmark maintainers are more comparable.</li><li><strong>With what harness and effort?</strong> Agent benchmarks depend heavily on scaffolding, tools, effort level and time limits. Two scores on different harnesses aren’t comparable.</li><li><strong>How many attempts?</strong> pass@1 and best-of-k are different claims (next lesson).</li><li><strong>Is it saturated or broken?</strong> Near the ceiling, the remaining errors are often label noise, so differences of a point or two mean nothing.</li><li><strong>Does it resemble your task?</strong> Usually not closely. Treat it as a filter for the shortlist, never the decision.</li></ol><div class=\"pm\"><p class=\"eyebrow\">What changes for you</p><ul><li>Use benchmarks to build a shortlist of two or three candidates, then decide with your own eval (lesson 5).</li><li>When anyone cites a score in a review, ask for the harness, effort setting, attempt count and whether it was independently run.</li><li>Ignore gaps of a few points on saturated or noisy benchmarks. Look for large gaps on fresh or held-out sets.</li><li>Assign someone to refresh this table each quarter. Benchmarks are retired, audited and replaced faster than most product cycles.</li></ul></div>"
+  },
+  {
+   "t": "pass@1 versus pass^k: capability is not reliability",
+   "shelf": "Durable",
+   "html": "<p>Benchmarks usually report <strong>pass@1</strong>: the share of tasks solved on a single attempt, averaged over many tasks. Some report <strong>pass@k</strong>: the share where at least one of k attempts succeeds. Users experience something else. They need the feature to work every time they use it. That is <strong>pass^k</strong> (“pass hat k”): the share of tasks where all k attempts succeed. The metric was popularised by Sierra’s τ-bench, a benchmark of agents serving simulated customers under business policies.</p><h3>The arithmetic</h3><p>If a task succeeds with probability p on each independent attempt, then pass@k = 1 − (1 − p)<sup>k</sup> and pass^k = p<sup>k</sup>. They move in opposite directions as k grows.</p><div class=\"tbl\"><table><thead><tr><th>Per-attempt success p</th><th>pass@1</th><th>pass@5</th><th>pass^5</th><th>pass^10</th></tr></thead><tbody><tr><td>0.99</td><td>99%</td><td>≈100%</td><td>95%</td><td>90%</td></tr><tr><td>0.95</td><td>95%</td><td>≈100%</td><td>77%</td><td>60%</td></tr><tr><td>0.90</td><td>90%</td><td>≈100%</td><td>59%</td><td>35%</td></tr><tr><td>0.80</td><td>80%</td><td>≈100%</td><td>33%</td><td>11%</td></tr></tbody></table></div><p>A model that is right 80% of the time looks almost perfect on pass@5 and fails a third of its users who try a task five times. τ-bench showed this in practice: in the original paper, a leading agent of the time succeeded on fewer than half the tasks, and its pass^8 in the retail domain fell below 25%.</p><h3>Real tasks aren’t uniform</h3><p>In practice p varies by task. Some tasks pass every time, some never, and the interesting ones sit in between. Aggregate pass^k is the average across tasks of each task’s own p<sup>k</sup>, so a set with many “sometimes” tasks degrades fast, while a set split between “always” and “never” barely changes. That split is useful diagnostically. Tasks that always fail point to capability or context gaps. Tasks that sometimes fail point to ambiguity in the prompt or spec, sampling variance or fragile tool use, and these are often fixable without changing models.</p><div class=\"callout\"><p class=\"eyebrow\">Small samples lie</p><p>With 20 tasks, the standard error on a pass rate near 50% is about 11 points. A model that scores 70% against another’s 60% on 20 tasks hasn’t been shown to be better. Run each task several times, report a range, and treat differences inside it as a tie. For decisions that matter, grow the set (Chapter 5).</p></div><p>Capability and reliability call for different product shapes. If pass@k is high but pass^k is low, the model can solve the task but not consistently. Generate several candidates and verify, or keep a human choosing between them. If pass@k itself is low, no amount of retrying will help; the task is outside the frontier.</p><div class=\"pm\"><p class=\"eyebrow\">What changes for you</p><ul><li>Put pass^k in acceptance criteria for critical-path features, with k matched to how often a user repeats the task in a week.</li><li>Run every eval case at least three times and report the spread. Single-run numbers are a sample, not a measurement.</li><li>Sort failures into “always fails” and “sometimes fails”. They have different fixes and different owners.</li><li>When a vendor quotes pass@k, ask for pass@1 and, for agents, pass^k. The gap is the reliability work you will inherit.</li></ul></div>"
+  },
+  {
+   "t": "Model tiers and release cadence across the major labs",
+   "shelf": "Perishable",
+   "html": "<p>The major labs (Anthropic, OpenAI and Google, with Meta, xAI, Mistral and Chinese labs such as DeepSeek and Alibaba’s Qwen team also shipping competitive models, many of them open-weight) each ship a family of models instead of one. Knowing the shape of those families and how often they change is what lets you plan rather than react.</p><h3>Tiers</h3><div class=\"tbl\"><table><thead><tr><th>Tier</th><th>Typical use</th><th>Relative price and latency</th><th>When to choose it</th></tr></thead><tbody><tr><td>Largest / most capable</td><td>Hard reasoning, long-horizon agents, the hardest code</td><td>Highest price, slowest</td><td>Your eval shows smaller tiers plateau below the bar</td></tr><tr><td>Mid tier</td><td>Most production chat, coding assistance and drafting</td><td>Middle</td><td>The default starting point for most features</td></tr><tr><td>Small / fast</td><td>Classification, routing, extraction, high-volume summarisation</td><td>Lowest price, fastest</td><td>High volume, tight latency, narrow task</td></tr><tr><td>Open-weight</td><td>Self-hosted, fine-tuned or data-residency-bound workloads</td><td>You pay for hosting instead of tokens</td><td>Control, residency or customisation outweigh a capability gap</td></tr></tbody></table></div><p>As of October 2026, one major vendor’s published list prices span roughly two orders of magnitude from its smallest to its largest tier. Effort settings add a second axis within each tier, so a mid-tier model at high effort can rival a large model at low effort on some tasks. Compare configurations (model plus effort), never model names alone.</p><h3>Cadence</h3><p>As of October 2026, each major lab ships a significant model update every few months, with smaller point releases between, and capability at a given price keeps falling. Three consequences follow for product teams.</p><ul><li><strong>Model choice expires.</strong> A selection made today is likely out of date within two quarters. Build re-evaluation into the plan.</li><li><strong>Snapshots and aliases differ.</strong> Vendors offer pinned versions and sometimes moving aliases. Pin in production so behaviour changes only when you choose (Chapter 10).</li><li><strong>Deprecation is scheduled.</strong> Vendors publish retirement dates, often committing to a minimum notice period. Put those dates on your roadmap the day you adopt a model.</li></ul><div class=\"callout\"><p class=\"eyebrow\">Where to look</p><p>Vendor model-overview pages list tiers, context windows, cutoffs, pricing and retirement dates. Model cards and system cards cover evaluations and known limits. Deprecation pages give the dates that force your hand. Read all three for any model you adopt.</p></div><p>Open-weight models typically trail the closed frontier by some months on the hardest tasks and match it on many everyday ones. The decision usually turns on control, data residency and cost at very high volume more than on raw capability.</p><div class=\"pm\"><p class=\"eyebrow\">What changes for you</p><ul><li>Keep a model registry: for each feature, the pinned model, effort setting, cutoff, price, retirement date and the eval result that justified the choice.</li><li>Put a model review in the plan every quarter and an ad-hoc one within two weeks of any major release from your current vendor or its main competitors.</li><li>Evaluate at least one tier down from your current choice at every review. Smaller tiers improve fast and are the cheapest margin win (Chapter 11).</li><li>Write contracts and architecture so that switching vendor is a configuration change plus an eval run (Chapter 13).</li></ul></div>"
+  },
+  {
+   "t": "Running your own bake-off on your own tasks",
+   "shelf": "Durable",
+   "html": "<p>Every lesson so far points to the same conclusion. The only reliable answer to “which model?” comes from running candidates on your own tasks, through your own harness, scored by your own rubric. A <strong>bake-off</strong> is a small, structured version of that, and a good one fits in a day.</p><h3>Design choices that decide whether it’s valid</h3><div class=\"tbl\"><table><thead><tr><th>Choice</th><th>Do</th><th>Avoid</th></tr></thead><tbody><tr><td>Tasks</td><td>Sample real inputs from logs or the backlog, including hard and ugly ones</td><td>Hand-picked showcase prompts</td></tr><tr><td>Harness</td><td>Same tools, context and output format for every model; adapt prompts only where a vendor’s docs require it</td><td>Tuning the prompt for your favourite and not the others</td></tr><tr><td>Settings</td><td>Compare at the effort levels you would actually ship, and include one tier down</td><td>Comparing a large model at maximum effort with a small one at default</td></tr><tr><td>Repeats</td><td>At least three runs per task per model</td><td>One run, then treating the result as fact</td></tr><tr><td>Grading</td><td>A written rubric; grade blind to which model produced each output</td><td>Grading by feel with model names visible</td></tr><tr><td>Cost and speed</td><td>Record actual tokens, cost and end-to-end latency per task, P50 and P95</td><td>List-price estimates</td></tr></tbody></table></div><h3>Scoring</h3><p>Score each output on a small rubric: 0 for unusable, 1 for usable after edits, 2 for ready to ship. Add pass^3 for each task (did all three runs score 2?). Then combine quality, cost and latency into a decision. A simple rule works well: discard any configuration that misses the latency or cost ceiling, then take the highest quality among the rest, and break ties on cost.</p><div class=\"callout\"><p class=\"eyebrow\">Worked example (illustrative numbers)</p><p>Twenty support-macro tasks, three configurations. The large model averages 1.8 on the rubric with pass^3 of 70%, at $0.04 and 9 seconds per task. The mid tier averages 1.7 with pass^3 of 65%, at $0.012 and 4 seconds. The small tier averages 1.2 with pass^3 of 30%. With 20 tasks the large and mid tiers are a statistical tie on quality, the mid tier is a third of the cost and twice as fast, so it wins. The small tier is out on quality, but would be worth re-testing with better context.</p></div><h3>Set the trigger before you decide</h3><p>A bake-off result is a snapshot. Write down in advance what will make you rerun it: a new major release from a shortlisted lab, a retirement notice, a price change beyond a threshold, or your production metrics drifting past a limit. Keep the task set, rubric and harness in the repository so rerunning takes hours, not weeks. Over time, the bake-off set grows into the regression eval that Chapter 5, Evals are the spec, describes.</p><div class=\"pm\"><p class=\"eyebrow\">What changes for you</p><ul><li>Require a bake-off, with its task set and rubric attached, for every model choice that reaches production.</li><li>Decide the latency and cost ceilings before looking at results, so they filter and don’t rationalise.</li><li>Record the re-evaluation trigger in the selection memo and in the model registry, with an owner.</li><li>Treat the bake-off set as a product asset. Add every interesting production failure to it.</li></ul></div>"
+  }
+ ],
+ "lab": {
+  "title": "Bake off three models on 20 real tasks",
+  "time": "about 3 hours",
+  "intro": "<p>Run three model configurations on 20 tasks taken from your own backlog or logs, and score quality, reliability, latency and cost per task. It proves which model your feature should use this quarter, with evidence an engineering lead will accept.</p>",
+  "steps": [
+   "<strong>Choose the feature and the three configurations.</strong> Your current production model, one competitor at a comparable tier, and one tier smaller than your current model. Fix the effort level you would ship for each.",
+   "<strong>Pull 20 real tasks.</strong> Sample from logs or the backlog: about 12 typical, 5 hard and 3 edge cases (bad input, ambiguous request, missing data). Strip personal data. Write the expected result or acceptance notes for each before running anything.",
+   "<strong>Set the ceilings first.</strong> Write down the maximum acceptable P95 latency and cost per task for this surface. Configurations that miss either are out regardless of quality.",
+   "<strong>Build one harness.</strong> Same system prompt, tools, context and output schema for all three. Adjust only where a vendor’s documentation requires it, and note every adjustment.",
+   "<strong>Run each task three times per configuration.</strong> That is 180 runs. Log output, input and output tokens, cost and end-to-end latency for each run.",
+   "<strong>Grade blind.</strong> Shuffle outputs and hide model names. Score each 0 (unusable), 1 (usable after edits) or 2 (ready to ship). If you have time, have a second person grade ten tasks and compare.",
+   "<strong>Compute and decide.</strong> For each configuration: mean score, pass^3 (share of tasks where all three runs scored 2), P50 and P95 latency, mean cost per task. Apply the ceilings, pick the best quality among survivors, break ties on cost, and treat quality differences under about 10 points of pass^3 as ties on a set this small.",
+   "<strong>Write the trigger.</strong> State what would make you rerun this bake-off, and save the tasks, rubric and harness where the team can rerun it."
+  ],
+  "template": "<div class=\"tbl\"><table><thead><tr><th>Configuration</th><th>Mean score (0–2)</th><th>pass^3</th><th>P50 latency</th><th>P95 latency</th><th>Cost per task</th><th>Passes ceilings?</th><th>Notes</th></tr></thead><tbody><tr><td>A: current production model, effort ___</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>B: competitor, comparable tier, effort ___</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>C: one tier smaller, effort ___</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>Ceilings</td><td>—</td><td>—</td><td>—</td><td>≤ ___ s</td><td>≤ $___</td><td>—</td><td>Set before running</td></tr></tbody></table></div>",
+  "done": "<p>A filled scorecard from 180 graded runs, a decision that follows mechanically from ceilings set in advance, and a saved harness someone else can rerun in an afternoon. Good looks like a result you would defend even if it contradicts the benchmark leaderboard, plus a clear list of tasks that every configuration fails, which become context or design work instead of model work.</p>"
+ },
+ "quiz": [
+  {
+   "q": "A vendor shows a new model scoring several points higher than your current one on SWE-bench Verified. Your team proposes switching your coding assistant. What is the best response?",
+   "o": [
+    "Switch, because SWE-bench Verified is the standard coding benchmark",
+    "Ignore it, because benchmarks have no relationship to real performance",
+    "Treat it as a reason to shortlist the model, check whether the score is independently run on a contamination-resistant set, and decide with your own bake-off",
+    "Wait for the model to top GPQA Diamond as well"
+   ],
+   "a": 2,
+   "w": "SWE-bench Verified has known contamination and test-quality problems, and small gaps on it are weak evidence. Benchmarks shortlist; your own tasks decide."
+  },
+  {
+   "q": "An agent completes a refund workflow correctly 90% of the time per attempt. Each customer typically triggers it five times a quarter. Roughly what share of customers see it work every time, assuming independent attempts?",
+   "o": [
+    "About 99%",
+    "About 90%",
+    "About 75%",
+    "About 59%"
+   ],
+   "a": 3,
+   "w": "pass^5 = 0.9⁵ ≈ 0.59. Reliability across repeated use is far below single-attempt accuracy."
+  },
+  {
+   "q": "On 20 tasks, model A passes 13 and model B passes 11. A stakeholder wants to announce that A is better. What should you say?",
+   "o": [
+    "With 20 tasks the difference is within noise; rerun each task several times and grow the set before claiming a winner",
+    "A is clearly better by 10 points",
+    "B is better because it is cheaper",
+    "Use pass@k instead, which will separate them"
+   ],
+   "a": 0,
+   "w": "The standard error on a pass rate near 50% with 20 tasks is about 11 points. A two-task gap is a tie until shown otherwise."
+  },
+  {
+   "q": "In your bake-off, the mid-tier model ties the largest model on quality, is a third of the cost and meets the latency ceiling. The largest model leads on HLE. Which should you choose?",
+   "o": [
+    "The largest model, because HLE measures general intelligence",
+    "The mid-tier model, because it ties on your tasks at lower cost and latency",
+    "Neither, until both are fine-tuned",
+    "Both, routing randomly between them"
+   ],
+   "a": 1,
+   "w": "Your own eval on your own tasks outranks a general benchmark, and HLE in particular has documented answer-key problems. Break ties on cost."
+  },
+  {
+   "q": "Some eval tasks fail on every run and others fail on one run in three. Which statement is most accurate?",
+   "o": [
+    "Both groups need a bigger model",
+    "Both groups are random noise and can be ignored",
+    "The intermittent failures prove the model is contaminated",
+    "Always-failing tasks suggest a capability or context gap; intermittent ones often point to ambiguity, sampling variance or fragile tools that can be fixed without changing models"
+   ],
+   "a": 3,
+   "w": "Separating “never” from “sometimes” tells you whether to change the model or fix the prompt, spec and tooling."
+  },
+  {
+   "q": "You chose a model in a bake-off last quarter. Which of these is the best re-evaluation trigger to write into the selection memo?",
+   "o": [
+    "Rerun whenever the model tops a public leaderboard",
+    "Rerun on any major release from a shortlisted lab, a retirement notice, a price change over 25%, or production quality dropping below the eval threshold",
+    "Rerun once a year",
+    "No trigger is needed if the model is pinned"
+   ],
+   "a": 1,
+   "w": "Releases arrive every few months and models are retired on a schedule. A concrete trigger with an owner keeps the choice current without constant churn."
+  }
+ ],
+ "deliverable": {
+  "title": "Model selection memo with a re-evaluation trigger",
+  "html": "<p>One page, written from the lab, for the engineering lead and whoever owns the feature’s budget. It records the decision and when it expires.</p><ol><li><strong>Decision.</strong> The chosen configuration (vendor, model, pinned version, effort setting) in one sentence, and the date.</li><li><strong>Ceilings.</strong> The latency and cost limits set before the bake-off, and why the surface needs them.</li><li><strong>Evidence.</strong> The scorecard for all three configurations: mean score, pass^3, P50 and P95 latency, cost per task. Say which differences are within noise.</li><li><strong>Frontier notes.</strong> Task types where every configuration struggled, and what you will do instead: context, retrieval, a review step or a scope cut.</li><li><strong>Benchmarks considered.</strong> Any public scores that shaped the shortlist, with harness, effort and whether they were independently run. One line on why they did not decide the result.</li><li><strong>Risks.</strong> Retirement date, vendor concentration, data residency, rate limits.</li><li><strong>Re-evaluation trigger and owner.</strong> The specific events that cause a rerun (new major release from a shortlisted lab, retirement notice, price change above a threshold, production metrics below the eval bar) and who runs it. Link the saved task set, rubric and harness.</li></ol><p>Add the decision to your model registry and the trigger dates to the team calendar.</p>"
+ },
+ "reading": [
+  {
+   "label": "Scale AI, SWE-Bench Pro: Can AI Agents Solve Long-Horizon Software Engineering Tasks?",
+   "url": "https://arxiv.org/abs/2509.16941"
+  },
+  {
+   "label": "Rein et al., GPQA: A Graduate-Level Google-Proof Q&A Benchmark",
+   "url": "https://arxiv.org/abs/2311.12022"
+  },
+  {
+   "label": "Epoch AI, Benchmark review: Humanity’s Last Exam (August 2026)",
+   "url": "https://epoch.ai/benchmarks/hle/review"
+  },
+  {
+   "label": "ARC Prize Foundation, ARC-AGI-3",
+   "url": "https://arcprize.org/arc-agi/3"
+  },
+  {
+   "label": "Yao et al. (Sierra), τ-bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains",
+   "url": "https://arxiv.org/abs/2406.12045"
+  }
+ ]
+}
